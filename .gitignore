@@ -1,3 +1,5 @@
-src/captures
-target
+backend/src/captures
+backend/target
+/target
 .idea
+node_modules
