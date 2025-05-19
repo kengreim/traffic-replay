@@ -24,6 +24,7 @@
     "tailwindcss": "^4.1.7"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@types/geojson": "^7946.0.16",
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.4",
@@ -33,5 +34,10 @@
     "globals": "^16.1.0",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@biomejs/biome"
+    ]
   }
 }
