@@ -59,10 +59,19 @@ function App() {
 
   const [timestamps, setTimestamps] = useState<string[]>([]);
   const [sliderIndex, setSliderIndex] = useState(0);
-  const [arrivalAirports, setArrivalAirports] = useState<string[]>([]);
-  const [departureAirports, setDepartureAirports] = useState<string[]>([]);
+
+  const [routeFilters, setRouteFilters] = useState<{ arrival: string; departure: string }[]>([]);
+
   const [newArrivalAirport, setNewArrivalAirport] = useState("");
   const [newDepartureAirport, setNewDepartureAirport] = useState("");
+
+  const newRouteFilter = useMemo(
+    () => ({
+      arrival: newArrivalAirport.toUpperCase(),
+      departure: newDepartureAirport.toUpperCase(),
+    }),
+    [newArrivalAirport, newDepartureAirport],
+  );
 
   useEffect(() => {
     // Extract timestamps from the data
@@ -85,42 +94,37 @@ function App() {
 
       const flightPlan = feature.properties.data.flight_plan;
 
-      const matchesArrival =
-        arrivalAirports.length === 0 || arrivalAirports.includes(flightPlan.arrival);
-      const matchesDeparture =
-        departureAirports.length === 0 || departureAirports.includes(flightPlan.departure);
+      if (routeFilters.length === 0) {
+        return true;
+      }
 
-      return matchesArrival && matchesDeparture;
+      for (const filter of routeFilters) {
+        if (
+          (filter.arrival === "*" || filter.arrival === flightPlan.arrival) &&
+          (filter.departure === "*" || filter.departure === flightPlan.departure)
+        ) {
+          return true;
+        }
+      }
+
+      return false;
     });
 
     return {
       type: "FeatureCollection",
       features: filteredFeatures,
     };
-  }, [currentData, arrivalAirports, departureAirports]);
+  }, [currentData, routeFilters]);
 
-  const handleAddArrivalAirport = (e: FormEvent) => {
+  const handleAddRouteFilter = (e: FormEvent) => {
     e.preventDefault();
-    if (newArrivalAirport && !arrivalAirports.includes(newArrivalAirport)) {
-      setArrivalAirports([...arrivalAirports, newArrivalAirport.toUpperCase()]);
-      setNewArrivalAirport("");
-    }
+
+    if (newArrivalAirport && newDepartureAirport && !routeFilters.includes(newRouteFilter))
+      setRouteFilters([...routeFilters, newRouteFilter]);
   };
 
-  const handleAddDepartureAirport = (e: FormEvent) => {
-    e.preventDefault();
-    if (newDepartureAirport && !departureAirports.includes(newDepartureAirport)) {
-      setDepartureAirports([...departureAirports, newDepartureAirport.toUpperCase()]);
-      setNewDepartureAirport("");
-    }
-  };
-
-  const removeArrivalAirport = (airport: string) => {
-    setArrivalAirports(arrivalAirports.filter((a) => a !== airport));
-  };
-
-  const removeDepartureAirport = (airport: string) => {
-    setDepartureAirports(departureAirports.filter((a) => a !== airport));
+  const handleRemoveRouteFilter = (route: { arrival: string; departure: string }) => {
+    setRouteFilters(routeFilters.filter((r) => r != route));
   };
 
   const layers = [
@@ -157,24 +161,28 @@ function App() {
   ];
 
   return (
-    <div style={{ position: "relative", width: "100vw", height: "100vh", display: "flex" }}>
+    <div className="flex min-h-dvh min-w-dvw">
       {/* Sidebar */}
-      <div
-        style={{
-          width: "300px",
-          backgroundColor: "white",
-          padding: "20px",
-          boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
-          overflowY: "auto",
-          zIndex: 1,
-        }}
-      >
+      <div className="w-[250px] bg-slate-900 p-6 overflow-y-auto overscroll-contain z-10 shadow-md text-white">
         <h2 style={{ marginBottom: "20px" }}>Airport Filters</h2>
 
         {/* Arrival Airports */}
         <div style={{ marginBottom: "20px" }}>
           <h3>Arrival Airports</h3>
-          <form onSubmit={handleAddArrivalAirport} style={{ marginBottom: "10px" }}>
+          <form onSubmit={handleAddRouteFilter} style={{ marginBottom: "10px" }}>
+            <input
+              type="text"
+              value={newDepartureAirport}
+              onChange={(e) => setNewDepartureAirport(e.target.value)}
+              placeholder="Enter ICAO code"
+              maxLength={4}
+              style={{
+                padding: "8px",
+                marginRight: "8px",
+                width: "100px",
+                textTransform: "uppercase",
+              }}
+            />
             <input
               type="text"
               value={newArrivalAirport}
@@ -203,9 +211,9 @@ function App() {
             </button>
           </form>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {arrivalAirports.map((airport) => (
+            {routeFilters.map((route) => (
               <div
-                key={airport}
+                key={`${route.departure}-${route.arrival}`}
                 style={{
                   backgroundColor: "#e0e0e0",
                   padding: "4px 8px",
@@ -215,70 +223,9 @@ function App() {
                   gap: "4px",
                 }}
               >
-                {airport}
+                {route.departure}-{route.arrival}
                 <button
-                  onClick={() => removeArrivalAirport(airport)}
-                  style={{
-                    border: "none",
-                    background: "none",
-                    cursor: "pointer",
-                    padding: "0 4px",
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Departure Airports */}
-        <div>
-          <h3>Departure Airports</h3>
-          <form onSubmit={handleAddDepartureAirport} style={{ marginBottom: "10px" }}>
-            <input
-              type="text"
-              value={newDepartureAirport}
-              onChange={(e) => setNewDepartureAirport(e.target.value)}
-              placeholder="Enter ICAO code"
-              maxLength={4}
-              style={{
-                padding: "8px",
-                marginRight: "8px",
-                width: "100px",
-                textTransform: "uppercase",
-              }}
-            />
-            <button
-              type="submit"
-              style={{
-                padding: "8px 12px",
-                backgroundColor: "#4CAF50",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-            >
-              Add
-            </button>
-          </form>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {departureAirports.map((airport) => (
-              <div
-                key={airport}
-                style={{
-                  backgroundColor: "#e0e0e0",
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
-                {airport}
-                <button
-                  onClick={() => removeDepartureAirport(airport)}
+                  onClick={() => handleRemoveRouteFilter(route)}
                   style={{
                     border: "none",
                     background: "none",
@@ -324,17 +271,32 @@ function App() {
               min={0}
               max={timestamps.length - 1}
               step={1}
+              value={[sliderIndex]}
               onValueChange={(v) => setSliderIndex(v[0])}
             >
-              <Slider.Track className="relative h-[3px] grow rounded-full bg-black">
-                <Slider.Range className="absolute h-full rounded-full bg-white" />
+              <Slider.Track className="relative h-[3px] grow rounded-full bg-neutral-300">
+                <Slider.Range className="absolute h-full rounded-full bg-slate-700" />
               </Slider.Track>
               <Slider.Thumb
-                className="block size-5 rounded-[10px] bg-white shadow-[0_2px_10px] shadow-black hover:bg-violet-800 focus:shadow-[0_0_0_5px] focus:shadow-black focus:outline-none"
+                className="block size-5 rounded-[10px] bg-white shadow-[0_2px_10px] shadow-black hover:bg-sky-600 transition-colors focus:shadow-[0_0_0_5px] focus:shadow-black focus:outline-none"
                 aria-label="Volume"
               />
             </Slider.Root>
           </form>
+          <button
+            className="ml-2"
+            onClick={() => setSliderIndex((prevState) => Math.max(prevState - 1, 0))}
+          >
+            Prev
+          </button>
+          <button
+            className="ml-2"
+            onClick={() =>
+              setSliderIndex((prevState) => Math.min(prevState + 1, timestamps.length - 1))
+            }
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>
