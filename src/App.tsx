@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo, type FormEvent } from "react";
 import DeckGL from "@deck.gl/react";
-import { GeoJsonLayer, IconLayer } from "@deck.gl/layers";
+import { GeoJsonLayer, IconLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { Map } from "react-map-gl/mapbox";
 import trafficData from "./consolidated3.json";
 import artccs from "./artccs.json";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { FeatureCollection } from "geojson";
+import type { FeatureCollection, MultiPoint, Point } from "geojson";
 import { Slider } from "radix-ui";
 import type { Feature, Geometry } from "geojson";
 
@@ -26,9 +26,9 @@ interface PilotData {
   callsign: string;
   latitude: number;
   longitude: number;
-  atltitude: number;
+  altitude: number;
   groundspeed: number;
-  transpoinder: string;
+  transponder: string;
   heading: number;
   flight_plan?: FlightPlan;
   logon_time: string;
@@ -152,22 +152,51 @@ function App() {
   //   }),];
 
   const layers = [
-    new IconLayer<PilotProperties>({
+    new IconLayer({
       id: "aircraft-layer",
-      data: filteredData,
+      data: filteredData?.features ?? [],
       pickable: true,
       iconAtlas: "/atlas.png",
       iconMapping: "/iconMapping.json",
-      getIcon: (d) => {
-        const aircraftType = d.data.flight_plan?.aircraft_short?.toLowerCase();
+      getIcon: (d: Feature<Point, PilotProperties>) => {
+        const aircraftType = d.properties.data.flight_plan?.aircraft_short?.toLowerCase();
         return aircraftType || "b738";
       },
       sizeScale: 15,
-      getPosition: (d) => [d.data.longitude, d.data.latitude],
+      getPosition: (d: Feature<Point, PilotProperties>) => [
+        d.properties.data.longitude,
+        d.properties.data.latitude,
+      ],
       getSize: 5,
       getColor: [255, 0, 0],
       billboard: false,
-      getAngle: (d) => <d className="data heading"></d>,
+      getAngle: (d: Feature<Point, PilotProperties>) => d.properties.data.heading,
+    }),
+    new ScatterplotLayer({
+      id: "aircraft-dot-layer",
+      data: filteredData?.features ?? [],
+      pickable: false,
+      getPosition: (d: Feature<Point, PilotProperties>) => [
+        d.properties.data.longitude,
+        d.properties.data.latitude,
+      ],
+      billboard: false,
+      getFillColor: [0, 0, 0],
+      radiusScale: 25,
+      getRadius: 5,
+    }),
+    new TextLayer({
+      id: "heading-layer",
+      data: filteredData?.features ?? [],
+      pickable: false,
+      getPosition: (d: Feature<Point, PilotProperties>) => [
+        d.properties.data.longitude,
+        d.properties.data.latitude,
+      ],
+      getText: (d: Feature<Point, PilotProperties>) => d.properties.data.heading.toString(),
+      getSize: 12,
+      getColor: [0, 0, 0],
+      getAlignmentBaseline: "bottom",
     }),
     new GeoJsonLayer({
       id: "boundaries",
