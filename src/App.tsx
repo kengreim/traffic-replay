@@ -106,7 +106,7 @@ function App() {
   }, [currentData, routeFilters]);
 
   const timestampString = useMemo(() => {
-    if (timestamps !== undefined && sliderIndex !== undefined) {
+    if (timestamps !== undefined && sliderIndex !== undefined && timestamps.length > 0) {
       const s = timestamps[sliderIndex];
       return `${s.substring(8, 10)}:${s.substring(10, 12)}:${s.substring(12, 14)}`;
     } else {
@@ -212,41 +212,39 @@ function App() {
   ];
 
   return (
-    <div className="flex min-h-dvh min-w-dvw">
+    <div className="flex min-h-dvh min-w-dvw font-manrope">
       {/* Sidebar */}
-      <div className="w-[250px] bg-slate-900 p-6 overflow-y-auto overscroll-contain z-10 shadow-md text-white">
+      <div className="w-[250px] bg-slate-900 p-6 overflow-y-auto overscroll-contain z-10 shadow-md text-white flex flex-col">
+        <h1 className="text-2xl font-bold">Traffic Replay</h1>
         <h2 style={{ marginBottom: "20px" }}>Airport Filters</h2>
 
         {/* Arrival Airports */}
         <div style={{ marginBottom: "20px" }}>
-          <h3>Arrival Airports</h3>
-          <form onSubmit={handleAddRouteFilter} style={{ marginBottom: "10px" }}>
+          <h3>IFR Routes</h3>
+          <form className="flex space-x-4" onSubmit={handleAddRouteFilter} style={{ marginBottom: "10px" }}>
+            <div className="flex flex-col space-y-2">
+              <label className="text-sm text-neutral-300">Departure</label>
             <input
               type="text"
               value={newDepartureAirport}
               onChange={(e) => setNewDepartureAirport(e.target.value)}
-              placeholder="Enter ICAO code"
+              placeholder="ICAO"
               maxLength={4}
-              style={{
-                padding: "8px",
-                marginRight: "8px",
-                width: "100px",
-                textTransform: "uppercase",
-              }}
+              className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
             />
-            <input
-              type="text"
-              value={newArrivalAirport}
-              onChange={(e) => setNewArrivalAirport(e.target.value)}
-              placeholder="Enter ICAO code"
-              maxLength={4}
-              style={{
-                padding: "8px",
-                marginRight: "8px",
-                width: "100px",
-                textTransform: "uppercase",
-              }}
-            />
+            </div>
+            <div className="flex flex-col space-y-2">
+              <label className="text-sm text-neutral-300">Arrival</label>
+              <input
+                type="text"
+                value={newArrivalAirport}
+                onChange={(e) => setNewArrivalAirport(e.target.value)}
+                placeholder="ICAO"
+                maxLength={4}
+                className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+              />
+            </div>
+
             <button
               type="submit"
               style={{
