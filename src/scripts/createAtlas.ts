@@ -1,6 +1,6 @@
 import sharp from "sharp";
-import { readdirSync, writeFileSync, mkdirSync } from "fs";
-import { join, basename } from "path";
+import { mkdirSync, readdirSync, writeFileSync } from "fs";
+import { basename, join } from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -125,8 +125,19 @@ async function createAtlas(): Promise<void> {
     // Save the mapping
     writeFileSync(join(OUTPUT_DIR, "iconMapping.json"), JSON.stringify(iconMapping, null, 2));
 
-    // Create aircraft list
-    const aircraftList = iconInfos.map((icon) => basename(icon.file, ".png"));
+    // Create aircraft list with scale factors
+    const aircraftScales: { [key: string]: number } = {};
+
+    // Find the smallest icon dimensions
+    const minWidth = Math.min(...iconInfos.map((icon) => icon.width));
+    const minHeight = Math.min(...iconInfos.map((icon) => icon.height));
+    const minDimension = Math.min(minWidth, minHeight);
+
+    // Calculate scale factors for each aircraft
+    for (const icon of iconInfos) {
+      const aircraftType = basename(icon.file, ".png");
+      aircraftScales[aircraftType] = Math.min(icon.width, icon.height) / minDimension;
+    }
 
     // Ensure data directory exists
     try {
@@ -135,10 +146,10 @@ async function createAtlas(): Promise<void> {
       // Directory might already exist, which is fine
     }
 
-    // Save aircraft list
-    writeFileSync(join(DATA_DIR, "aircraft.json"), JSON.stringify(aircraftList, null, 2));
+    // Save aircraft scales
+    writeFileSync(join(DATA_DIR, "aircraft.json"), JSON.stringify(aircraftScales, null, 2));
 
-    console.log("Atlas, mapping, and aircraft list created successfully!");
+    console.log("Atlas, mapping, and aircraft scales created successfully!");
   } catch (error) {
     console.error("Error creating atlas:", error);
     throw error;
