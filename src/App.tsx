@@ -105,6 +105,15 @@ function App() {
     };
   }, [currentData, routeFilters]);
 
+  const timestampString = useMemo(() => {
+    if (timestamps !== undefined && sliderIndex !== undefined) {
+      const s = timestamps[sliderIndex];
+      return `${s.substring(8, 10)}:${s.substring(10, 12)}:${s.substring(12, 14)}`;
+    } else {
+      return "";
+    }
+  }, [timestamps, sliderIndex]);
+
   const handleAddRouteFilter = (e: FormEvent) => {
     e.preventDefault();
 
@@ -159,10 +168,8 @@ function App() {
       billboard: false,
       getAngle: (d: Feature<Point, PilotProperties>) =>
         Math.max(360 - d.properties.data.heading, 0),
-      getSize: (d: Feature<Point, PilotProperties>) => {
-        const aircraftType = d.properties.data.flight_plan?.aircraft_short?.toLowerCase();
-        return getAircraftIcon(aircraftType).width;
-      },
+      sizeMinPixels: 70,
+      sizeMaxPixels: 150,
     }),
     // new ScatterplotLayer({
     //   id: "aircraft-dot-layer",
@@ -173,9 +180,12 @@ function App() {
     //     d.properties.data.latitude,
     //   ],
     //   billboard: false,
-    //   getFillColor: [0, 0, 0],
-    //   radiusScale: 25,
-    //   getRadius: 5,
+    //   stroked: true,
+    //   filled: false,
+    //   getLineColor: [100, 100, 100  ],
+    //   getRadius: 5*1852,
+    //   radiusUnits: "meters",
+    //   lineWidthMinPixels: 1
     // }),
     // new TextLayer({
     //   id: "heading-layer",
@@ -304,10 +314,9 @@ function App() {
             boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
           }}
         >
-          <div style={{ marginBottom: "10px" }}>Current Time: {timestamps[sliderIndex]}</div>
-          <form>
+          <form className="px-4">
             <Slider.Root
-              className="relative flex h-5 w-full touch-none select-none items-center"
+              className="relative flex h-5 w-full touch-none select-none items-center pt-7"
               defaultValue={[0]}
               min={0}
               max={timestamps.length - 1}
@@ -321,7 +330,9 @@ function App() {
               <Slider.Thumb
                 className="block size-5 rounded-[10px] bg-white shadow-[0_2px_10px] shadow-black hover:bg-sky-600 transition-colors focus:shadow-[0_0_0_5px] focus:shadow-black focus:outline-none"
                 aria-label="Volume"
-              />
+              >
+                <div className="relative -top-8 -left-6 font-mono">{timestampString}</div>
+              </Slider.Thumb>
             </Slider.Root>
           </form>
           <button

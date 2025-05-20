@@ -1,5 +1,5 @@
 import sharp from "sharp";
-import { mkdirSync, readdirSync, writeFileSync } from "fs";
+import { readdirSync, writeFileSync } from "fs";
 import { basename, join } from "path";
 import { fileURLToPath } from "url";
 
@@ -8,7 +8,6 @@ const __dirname = join(__filename, "../../");
 
 const ICONS_DIR = join(__dirname, "assets", "icons");
 const OUTPUT_DIR = join(__dirname, "../", "public");
-const DATA_DIR = join(__dirname, "data");
 const ICONS_PER_ROW = 10;
 
 interface IconMapping {
@@ -58,14 +57,13 @@ async function createAtlas(): Promise<void> {
     iconInfos.sort((a, b) => b.height - a.height);
 
     // Calculate atlas dimensions
-    //const rows = Math.ceil(iconInfos.length / ICONS_PER_ROW);
     const maxWidth = Math.max(...iconInfos.map((icon) => icon.width));
+    const maxHeight = Math.max(...iconInfos.map((icon) => icon.height));
     const atlasWidth = ICONS_PER_ROW * maxWidth;
 
     // Calculate total height needed
     let currentY = 0;
     let currentX = 0;
-    let maxHeightInRow = 0;
     let rowCount = 0;
 
     // Create icon mapping
@@ -77,21 +75,17 @@ async function createAtlas(): Promise<void> {
       const aircraftType = basename(iconInfo.file, ".png");
 
       // Check if we need to move to next row
-      if (currentX + iconInfo.width > atlasWidth) {
+      if (currentX + maxWidth > atlasWidth) {
         currentX = 0;
-        currentY += maxHeightInRow;
-        maxHeightInRow = 0;
+        currentY += maxHeight;
         rowCount++;
       }
-
-      // Update max height in current row
-      maxHeightInRow = Math.max(maxHeightInRow, iconInfo.height);
 
       iconMapping[aircraftType] = {
         x: currentX,
         y: currentY,
-        width: iconInfo.width,
-        height: iconInfo.height,
+        width: maxWidth,
+        height: maxHeight,
         mask: true,
         anchorX: iconInfo.width / 2,
         anchorY: iconInfo.height / 2,
@@ -103,11 +97,11 @@ async function createAtlas(): Promise<void> {
         left: currentX,
       });
 
-      currentX += iconInfo.width;
+      currentX += maxWidth;
     }
 
     // Calculate final atlas height
-    const atlasHeight = currentY + maxHeightInRow;
+    const atlasHeight = currentY + maxHeight;
 
     // Create a blank canvas
     const atlas = sharp({
@@ -125,31 +119,7 @@ async function createAtlas(): Promise<void> {
     // Save the mapping
     writeFileSync(join(OUTPUT_DIR, "iconMapping.json"), JSON.stringify(iconMapping, null, 2));
 
-    // Create aircraft list with scale factors
-    const aircraftScales: { [key: string]: number } = {};
-
-    // Find the smallest icon dimensions
-    const minWidth = Math.min(...iconInfos.map((icon) => icon.width));
-    const minHeight = Math.min(...iconInfos.map((icon) => icon.height));
-    const minDimension = Math.min(minWidth, minHeight);
-
-    // Calculate scale factors for each aircraft
-    for (const icon of iconInfos) {
-      const aircraftType = basename(icon.file, ".png");
-      aircraftScales[aircraftType] = Math.min(icon.width, icon.height) / minDimension;
-    }
-
-    // Ensure data directory exists
-    try {
-      mkdirSync(DATA_DIR, { recursive: true });
-    } catch (error) {
-      // Directory might already exist, which is fine
-    }
-
-    // Save aircraft scales
-    writeFileSync(join(DATA_DIR, "aircraft.json"), JSON.stringify(aircraftScales, null, 2));
-
-    console.log("Atlas, mapping, and aircraft scales created successfully!");
+    console.log("Atlas and mapping created successfully!");
   } catch (error) {
     console.error("Error creating atlas:", error);
     throw error;
