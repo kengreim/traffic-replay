@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, type FormEvent } from "react";
 import DeckGL from "@deck.gl/react";
-import { GeoJsonLayer } from "@deck.gl/layers";
+import { GeoJsonLayer, IconLayer } from "@deck.gl/layers";
 import { Map } from "react-map-gl/mapbox";
 import trafficData from "./consolidated3.json";
 import artccs from "./artccs.json";
@@ -127,27 +127,47 @@ function App() {
     setRouteFilters(routeFilters.filter((r) => r != route));
   };
 
+  //
+  // const layers = [
+  //   new GeoJsonLayer({
+  //     id: "geojson-layer",
+  //     data: filteredData,
+  //     pickable: true,
+  //     stroked: false,
+  //     filled: true,
+  //     extruded: true,
+  //     pointType: "circle+text",
+  //     lineWidthScale: 20,
+  //     lineWidthMinPixels: 2,
+  //     getFillColor: [255, 0, 0],
+  //     getLineColor: [0, 0, 0],
+  //     getPointRadius: 50,
+  //     pointRadiusMinPixels: 2,
+  //     getLineWidth: 1,
+  //     getElevation: 30,
+  //     getText: (f: Feature<Geometry, PilotProperties>) => f.properties.data.callsign,
+  //     getTextSize: 12,
+  //     getTextPixelOffset: [0, 15],
+  //     getTextColor: [0, 0, 0],
+  //   }),];
+
   const layers = [
-    new GeoJsonLayer({
-      id: "geojson-layer",
+    new IconLayer<PilotProperties>({
+      id: "aircraft-layer",
       data: filteredData,
       pickable: true,
-      stroked: false,
-      filled: true,
-      extruded: true,
-      pointType: "circle+text",
-      lineWidthScale: 20,
-      lineWidthMinPixels: 2,
-      getFillColor: [255, 0, 0],
-      getLineColor: [0, 0, 0],
-      getPointRadius: 50,
-      pointRadiusMinPixels: 2,
-      getLineWidth: 1,
-      getElevation: 30,
-      getText: (f: Feature<Geometry, PilotProperties>) => f.properties.data.callsign,
-      getTextSize: 12,
-      getTextPixelOffset: [0, 15],
-      getTextColor: [0, 0, 0],
+      iconAtlas: "/atlas.png",
+      iconMapping: "/iconMapping.json",
+      getIcon: (d) => {
+        const aircraftType = d.data.flight_plan?.aircraft_short?.toLowerCase();
+        return aircraftType || "b738";
+      },
+      sizeScale: 15,
+      getPosition: (d) => [d.data.longitude, d.data.latitude],
+      getSize: 5,
+      getColor: [255, 0, 0],
+      billboard: false,
+      getAngle: (d) => <d className="data heading"></d>,
     }),
     new GeoJsonLayer({
       id: "boundaries",
