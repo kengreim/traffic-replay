@@ -1,4 +1,4 @@
-import {useState, useEffect, useMemo, type FormEvent} from "react";
+import { useState, useEffect, useMemo, type FormEvent } from "react";
 import DeckGL from "@deck.gl/react";
 import { GeoJsonLayer } from "@deck.gl/layers";
 import { Map } from "react-map-gl/mapbox";
@@ -30,7 +30,7 @@ interface PilotData {
   groundspeed: number;
   transpoinder: string;
   heading: number;
-  flightplan?: FlightPlan;
+  flight_plan?: FlightPlan;
   logon_time: string;
   last_updated: string;
 }
@@ -38,14 +38,14 @@ interface PilotData {
 interface FlightPlan {
   flight_rules: string;
   aircraft: string;
-  aircraftFaa: string;
-  aircraftShort: string;
+  aircraft_faa: string;
+  aircraft_short: string;
   departure: string;
   arrival: string;
   alternate: string;
   altitude: string;
   route: string;
-  revisionId: number;
+  revision_id: number;
 }
 
 function App() {
@@ -79,18 +79,16 @@ function App() {
     if (!currentData) return currentData;
 
     const filteredFeatures = currentData.features.filter((feature) => {
-      if (!feature.properties?.data?.flightplan)
-      {
+      if (!feature.properties?.data?.flight_plan) {
         return false;
       }
 
+      const flightPlan = feature.properties.data.flight_plan;
 
-      const flightPlan = feature.properties.data.flightplan;
-
-      const matchesArrival = arrivalAirports.length === 0 || 
-        arrivalAirports.includes(flightPlan.arrival);
-      const matchesDeparture = departureAirports.length === 0 || 
-        departureAirports.includes(flightPlan.departure);
+      const matchesArrival =
+        arrivalAirports.length === 0 || arrivalAirports.includes(flightPlan.arrival);
+      const matchesDeparture =
+        departureAirports.length === 0 || departureAirports.includes(flightPlan.departure);
 
       return matchesArrival && matchesDeparture;
     });
@@ -118,11 +116,11 @@ function App() {
   };
 
   const removeArrivalAirport = (airport: string) => {
-    setArrivalAirports(arrivalAirports.filter(a => a !== airport));
+    setArrivalAirports(arrivalAirports.filter((a) => a !== airport));
   };
 
   const removeDepartureAirport = (airport: string) => {
-    setDepartureAirports(departureAirports.filter(a => a !== airport));
+    setDepartureAirports(departureAirports.filter((a) => a !== airport));
   };
 
   const layers = [
@@ -161,16 +159,18 @@ function App() {
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", display: "flex" }}>
       {/* Sidebar */}
-      <div style={{
-        width: "300px",
-        backgroundColor: "white",
-        padding: "20px",
-        boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
-        overflowY: "auto",
-        zIndex: 1,
-      }}>
+      <div
+        style={{
+          width: "300px",
+          backgroundColor: "white",
+          padding: "20px",
+          boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
+          overflowY: "auto",
+          zIndex: 1,
+        }}
+      >
         <h2 style={{ marginBottom: "20px" }}>Airport Filters</h2>
-        
+
         {/* Arrival Airports */}
         <div style={{ marginBottom: "20px" }}>
           <h3>Arrival Airports</h3>
@@ -188,27 +188,33 @@ function App() {
                 textTransform: "uppercase",
               }}
             />
-            <button type="submit" style={{
-              padding: "8px 12px",
-              backgroundColor: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}>
+            <button
+              type="submit"
+              style={{
+                padding: "8px 12px",
+                backgroundColor: "#4CAF50",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
               Add
             </button>
           </form>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             {arrivalAirports.map((airport) => (
-              <div key={airport} style={{
-                backgroundColor: "#e0e0e0",
-                padding: "4px 8px",
-                borderRadius: "4px",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-              }}>
+              <div
+                key={airport}
+                style={{
+                  backgroundColor: "#e0e0e0",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
                 {airport}
                 <button
                   onClick={() => removeArrivalAirport(airport)}
@@ -243,27 +249,33 @@ function App() {
                 textTransform: "uppercase",
               }}
             />
-            <button type="submit" style={{
-              padding: "8px 12px",
-              backgroundColor: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}>
+            <button
+              type="submit"
+              style={{
+                padding: "8px 12px",
+                backgroundColor: "#4CAF50",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
               Add
             </button>
           </form>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             {departureAirports.map((airport) => (
-              <div key={airport} style={{
-                backgroundColor: "#e0e0e0",
-                padding: "4px 8px",
-                borderRadius: "4px",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-              }}>
+              <div
+                key={airport}
+                style={{
+                  backgroundColor: "#e0e0e0",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
                 {airport}
                 <button
                   onClick={() => removeDepartureAirport(airport)}
@@ -285,7 +297,10 @@ function App() {
       {/* Map */}
       <div style={{ flex: 1, position: "relative" }}>
         <DeckGL initialViewState={viewport} controller={true} layers={layers}>
-          <Map mapboxAccessToken={MAPBOX_ACCESS_TOKEN} mapStyle="mapbox://styles/mapbox/light-v11" />
+          <Map
+            mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
+            mapStyle="mapbox://styles/mapbox/light-v11"
+          />
         </DeckGL>
 
         <div
