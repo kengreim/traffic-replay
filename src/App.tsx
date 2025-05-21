@@ -10,7 +10,7 @@ import { Slider } from "radix-ui";
 import type { Feature } from "geojson";
 import type { FlightPlan } from "./types/vatsim-capture.ts";
 import { getAircraftIcon } from "./utils/icons.ts";
-import { CrossIcon, PlusIcon, SquareX, X } from "lucide-react";
+import { PlusIcon, X } from "lucide-react";
 import { StyledCheckbox } from "./components/ui-core/Checkbox.tsx";
 import type { CheckedState } from "./components/ui-core/Checkbox.tsx";
 
@@ -215,12 +215,12 @@ function App() {
       billboard: false,
       stroked: true,
       filled: false,
-      getLineColor: [100, 100, 100  ],
-      getRadius: ringsDistance*1852,
+      getLineColor: [100, 100, 100],
+      getRadius: ringsDistance * 1852,
       radiusUnits: "meters",
       lineWidthMinPixels: 1,
       visible: showRings,
-      updateTriggers: {getRadius: [ringsDistance]}
+      updateTriggers: { getRadius: [ringsDistance] },
     }),
     new TextLayer({
       id: "heading-layer",
@@ -314,18 +314,21 @@ function App() {
                 checked={rings}
                 onCheckedChange={(checked) => setRings(checked)}
               />
-              {rings &&
-                  <div className="flex space-x-3 items-center">
+              {rings && (
+                <div className="flex space-x-3 items-center">
                   <input
-                      type="number"
-                      min={0}
-                      max={50}
-                      step={0.5}
-                      value={ringsDistance}
-                      onChange={(e) => setRingsDistance(parseFloat(e.target.value))}
-                      placeholder="3"
-                      className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
-                  /><p>Radius (nm)</p></div>}
+                    type="number"
+                    min={0}
+                    max={50}
+                    step={0.5}
+                    value={ringsDistance}
+                    onChange={(e) => setRingsDistance(parseFloat(e.target.value))}
+                    placeholder="3"
+                    className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+                  />
+                  <p>Radius (nm)</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
