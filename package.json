@@ -19,7 +19,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-map-gl": "^8.0.4",
-    "tailwindcss": "^4.1.7"
+    "tailwindcss": "^4.1.7",
+    "lucide-react": "^0.511.0"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

@@ -10,6 +10,7 @@ import { Slider } from "radix-ui";
 import type { Feature } from "geojson";
 import type { FlightPlan } from "./types/vatsim-capture.ts";
 import { getAircraftIcon } from "./utils/icons.ts";
+import {Play} from "lucide-react";
 
 // Replace with your Mapbox access token
 const MAPBOX_ACCESS_TOKEN =
