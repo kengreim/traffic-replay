@@ -66,6 +66,16 @@ function App() {
   // Groundspeed filter
   const [hideSlowAircraft, setHideSlowAircraft] = useState<CheckedState>(false);
 
+  // Aircraft rings
+  const [rings, setRings] = useState<CheckedState>(false);
+  const [ringsDistance, setRingsDistance] = useState(3);
+  const showRings = useMemo(() => {
+    if (rings === "indeterminate") {
+      return false;
+    }
+    return rings;
+  }, [rings]);
+
   const newRouteFilter = useMemo(
     () => ({
       arrival: newArrivalAirport.toUpperCase(),
@@ -194,22 +204,24 @@ function App() {
       sizeMinPixels: 70,
       sizeMaxPixels: 150,
     }),
-    // new ScatterplotLayer({
-    //   id: "aircraft-dot-layer",
-    //   data: filteredData?.features ?? [],
-    //   pickable: false,
-    //   getPosition: (d: Feature<Point, PilotProperties>) => [
-    //     d.properties.data.longitude,
-    //     d.properties.data.latitude,
-    //   ],
-    //   billboard: false,
-    //   stroked: true,
-    //   filled: false,
-    //   getLineColor: [100, 100, 100  ],
-    //   getRadius: 5*1852,
-    //   radiusUnits: "meters",
-    //   lineWidthMinPixels: 1
-    // }),
+    new ScatterplotLayer({
+      id: "aircraft-dot-layer",
+      data: filteredData?.features ?? [],
+      pickable: false,
+      getPosition: (d: Feature<Point, PilotProperties>) => [
+        d.properties.data.longitude,
+        d.properties.data.latitude,
+      ],
+      billboard: false,
+      stroked: true,
+      filled: false,
+      getLineColor: [100, 100, 100  ],
+      getRadius: ringsDistance*1852,
+      radiusUnits: "meters",
+      lineWidthMinPixels: 1,
+      visible: showRings,
+      updateTriggers: {getRadius: [ringsDistance]}
+    }),
     new TextLayer({
       id: "heading-layer",
       data: filteredData?.features ?? [],
@@ -287,6 +299,33 @@ function App() {
                 checked={destination}
                 onCheckedChange={(checked) => setDestination(checked)}
               />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col space-y-2">
+          <div>
+            <div className="mb-2">
+              <h2 className="text-xl">Aircraft Rings</h2>
+            </div>
+            <div className="border rounded border-slate-600 p-2 flex flex-col space-y-2">
+              <StyledCheckbox
+                label="Show rings"
+                checked={rings}
+                onCheckedChange={(checked) => setRings(checked)}
+              />
+              {rings &&
+                  <div className="flex space-x-3 items-center">
+                  <input
+                      type="number"
+                      min={0}
+                      max={50}
+                      step={0.5}
+                      value={ringsDistance}
+                      onChange={(e) => setRingsDistance(parseFloat(e.target.value))}
+                      placeholder="3"
+                      className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+                  /><p>Radius (nm)</p></div>}
             </div>
           </div>
         </div>
