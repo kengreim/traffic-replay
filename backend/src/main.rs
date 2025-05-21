@@ -1,12 +1,15 @@
+use anyhow::{anyhow, bail};
 use chrono::{DateTime, Utc};
-use geo::{Contains, LineString, Polygon, point};
+use geo::{BoundingRect, Contains, LineString, MultiPolygon, Polygon, Rect, point, unary_union};
 use geojson::feature::Id;
-use geojson::{Feature, FeatureCollection, JsonObject, Value};
+use geojson::{Feature, FeatureCollection, GeoJson, JsonObject, Value};
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::collections::HashMap;
+use std::fs;
 use std::fs::File;
-use std::io::Write;
+use std::io::{Read, Write};
+use std::path::Path;
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
@@ -59,7 +62,7 @@ impl From<vatsim_utils::models::Pilot> for PilotData {
             groundspeed: value.groundspeed,
             transponder: value.transponder,
             heading: value.heading,
-            flight_plan: value.flight_plan.map_or(None, |f| Some(f.into())),
+            flight_plan: value.flight_plan.map(|f| f.into()),
             logon_time: value.logon_time,
             last_updated: value.last_updated,
         }
@@ -83,8 +86,25 @@ impl From<vatsim_utils::models::FlightPlan> for FlightPlan {
     }
 }
 
+#[derive(Deserialize, Serialize, Debug, Clone)]
+struct EventConfig {
+    pub name: String,
+    pub artccs: Vec<String>,
+    pub fields: Vec<String>,
+    pub advertised_start_time: DateTime<Utc>,
+    pub advertised_end_time: DateTime<Utc>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+struct EventCapture {
+    pub config: EventConfig,
+    pub first_timestamp_key: String,
+    pub last_timestamp_key: String,
+    pub captures: HashMap<String, FeatureCollection>,
+}
+
 #[tokio::main]
-async fn main() -> Result<(), SetGlobalDefaultError> {
+async fn main() -> Result<(), anyhow::Error> {
     let subscriber = tracing_subscriber::fmt()
         .compact()
         .json()
@@ -94,63 +114,71 @@ async fn main() -> Result<(), SetGlobalDefaultError> {
 
     tracing::subscriber::set_global_default(subscriber)?;
 
-    let mut all_snapshots = HashMap::new();
+    let artccs = load_artcc_polygons()?;
+    // for (id, _) in artccs {
+    //     println!("{id}");
+    // }
 
-    for path in WalkDir::new("./src/captures")
-        .min_depth(1)
-        .max_depth(1)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().is_file())
-        .map(|e| e.into_path())
-    {
-        if let Ok(file) = File::open(&path) {
-            let pilots: Vec<vatsim_utils::models::Pilot> = serde_json::from_reader(file).unwrap();
-            let update = path.file_stem().unwrap().to_str().unwrap();
+    let x = artccs_bounding_rect(&artccs, &vec!["ZOA", "ZLA"])?;
+    println!("{:?}", x);
 
-            let features = pilots.into_iter().map(|pilot| {
-                let geometry = Some(Value::Point(vec![pilot.longitude, pilot.latitude]).into());
-                let id = Some(Id::Number(pilot.cid.into()));
-
-                let mut properties = JsonObject::new();
-                properties.insert(
-                    "data".to_string(),
-                    serde_json::to_value(PilotData::from(pilot))
-                        .expect("could not serialize Pilot")
-                        .into(),
-                );
-
-                Feature {
-                    bbox: None,
-                    geometry,
-                    id,
-                    properties: Some(properties),
-                    foreign_members: None,
-                }
-            });
-
-            let collection = FeatureCollection {
-                bbox: None,
-                features: features.collect::<Vec<_>>(),
-                foreign_members: None,
-            };
-
-            // let snapshot = pilots
-            //     .into_iter()
-            //     .map(|p| PilotSnapshot::from((update.to_string(), p)))
-            //     .collect::<Vec<_>>();
-            all_snapshots.insert(update.to_string(), collection);
-        }
-    }
-
-    let mut file = File::create("./src/consolidated3.json").expect("Could not create file");
-    if let Err(e) = file.write_all(
-        &serde_json::to_string(&all_snapshots)
-            .expect("could not serialize")
-            .into_bytes(),
-    ) {
-        warn!("Could not write to file: {}", e);
-    }
+    // let mut all_snapshots = HashMap::new();
+    //
+    // for path in WalkDir::new("./src/captures")
+    //     .min_depth(1)
+    //     .max_depth(1)
+    //     .into_iter()
+    //     .filter_map(|e| e.ok())
+    //     .filter(|e| e.file_type().is_file())
+    //     .map(|e| e.into_path())
+    // {
+    //     if let Ok(file) = File::open(&path) {
+    //         let pilots: Vec<vatsim_utils::models::Pilot> = serde_json::from_reader(file).unwrap();
+    //         let update = path.file_stem().unwrap().to_str().unwrap();
+    //
+    //         let features = pilots.into_iter().map(|pilot| {
+    //             let geometry = Some(Value::Point(vec![pilot.longitude, pilot.latitude]).into());
+    //             let id = Some(Id::Number(pilot.cid.into()));
+    //
+    //             let mut properties = JsonObject::new();
+    //             properties.insert(
+    //                 "data".to_string(),
+    //                 serde_json::to_value(PilotData::from(pilot))
+    //                     .expect("could not serialize Pilot")
+    //                     .into(),
+    //             );
+    //
+    //             Feature {
+    //                 bbox: None,
+    //                 geometry,
+    //                 id,
+    //                 properties: Some(properties),
+    //                 foreign_members: None,
+    //             }
+    //         });
+    //
+    //         let collection = FeatureCollection {
+    //             bbox: None,
+    //             features: features.collect::<Vec<_>>(),
+    //             foreign_members: None,
+    //         };
+    //
+    //         // let snapshot = pilots
+    //         //     .into_iter()
+    //         //     .map(|p| PilotSnapshot::from((update.to_string(), p)))
+    //         //     .collect::<Vec<_>>();
+    //         all_snapshots.insert(update.to_string(), collection);
+    //     }
+    // }
+    //
+    // let mut file = File::create("./src/consolidated3.json").expect("Could not create file");
+    // if let Err(e) = file.write_all(
+    //     &serde_json::to_string(&all_snapshots)
+    //         .expect("could not serialize")
+    //         .into_bytes(),
+    // ) {
+    //     warn!("Could not write to file: {}", e);
+    // }
 
     // // Set up VATSIM Datafeed
     // let api = Vatsim::new()
@@ -261,4 +289,53 @@ async fn datafeed_loop(api: Vatsim, tx: Sender<V3ResponseData>, end_time: DateTi
         debug!(?sleep_duration, "Sleeping");
         sleep(sleep_duration).await;
     }
+}
+
+fn load_artcc_polygons() -> Result<HashMap<String, Polygon>, geojson::Error> {
+    let geojson_str = fs::read_to_string("./src/artccs.json").expect("Could not read artccs.json");
+    let geojson = geojson_str
+        .parse::<GeoJson>()
+        .expect("Could not parse artccs.json");
+    let collection = FeatureCollection::try_from(geojson)?;
+
+    let mut boundaries = HashMap::new();
+    for feature in collection.features {
+        let id = feature
+            .properties
+            .clone()
+            .expect("Missing properties")
+            .get("id")
+            .expect("Missing id")
+            .as_str()
+            .expect("Unable to parse id to &str")
+            .to_string();
+        let poly = Polygon::<f64>::try_from(feature)?;
+        boundaries.insert(id, poly);
+    }
+
+    Ok(boundaries)
+}
+
+fn combine_artccs(
+    boundaries: &HashMap<String, Polygon<f64>>,
+    artccs: &[&str],
+) -> Result<MultiPolygon<f64>, anyhow::Error> {
+    let mut polygons = vec![];
+    for artcc in artccs {
+        let Some(poly) = boundaries.get(&artcc.to_string()) else {
+            bail!("invalid ARTCC id: {artcc}")
+        };
+        polygons.push(poly.clone());
+    }
+    Ok(unary_union(&polygons))
+}
+
+fn artccs_bounding_rect(
+    boundaries: &HashMap<String, Polygon<f64>>,
+    artccs: &[&str],
+) -> Result<Rect<f64>, anyhow::Error> {
+    let combined_poly = combine_artccs(boundaries, artccs)?;
+    combined_poly
+        .bounding_rect()
+        .ok_or(anyhow!("no bounding rectangle"))
 }
