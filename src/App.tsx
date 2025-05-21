@@ -10,7 +10,9 @@ import { Slider } from "radix-ui";
 import type { Feature } from "geojson";
 import type { FlightPlan } from "./types/vatsim-capture.ts";
 import { getAircraftIcon } from "./utils/icons.ts";
-import { Play, PlusIcon } from "lucide-react";
+import { CrossIcon, PlusIcon, SquareX, X } from "lucide-react";
+import { StyledCheckbox } from "./components/ui-core/Checkbox.tsx";
+import type { CheckedState } from "./components/ui-core/Checkbox.tsx";
 
 // Replace with your Mapbox access token
 const MAPBOX_ACCESS_TOKEN =
@@ -55,6 +57,15 @@ function App() {
   const [newArrivalAirport, setNewArrivalAirport] = useState("");
   const [newDepartureAirport, setNewDepartureAirport] = useState("");
 
+  // Label toggles
+  const [callsign, setCallsign] = useState<CheckedState>(true);
+  const [speed, setSpeed] = useState<CheckedState>(false);
+  const [altitude, setAltitude] = useState<CheckedState>(false);
+  const [destination, setDestination] = useState<CheckedState>(false);
+
+  // Groundspeed filter
+  const [hideSlowAircraft, setHideSlowAircraft] = useState<CheckedState>(false);
+
   const newRouteFilter = useMemo(
     () => ({
       arrival: newArrivalAirport.toUpperCase(),
@@ -78,6 +89,17 @@ function App() {
     if (!currentData) return currentData;
 
     const filteredFeatures = currentData.features.filter((feature) => {
+      if (feature.properties?.data?.groundspeed) {
+        if (
+          hideSlowAircraft &&
+          (feature.properties.data.groundspeed === 0 || feature.properties.data.groundspeed < 30)
+        ) {
+          return false;
+        }
+      } else {
+        return false;
+      }
+
       if (!feature.properties?.data?.flight_plan) {
         return false;
       }
@@ -104,7 +126,7 @@ function App() {
       type: "FeatureCollection",
       features: filteredFeatures,
     };
-  }, [currentData, routeFilters]);
+  }, [currentData, routeFilters, hideSlowAircraft]);
 
   const timestampString = useMemo(() => {
     if (timestamps !== undefined && sliderIndex !== undefined && timestamps.length > 0) {
@@ -188,19 +210,40 @@ function App() {
     //   radiusUnits: "meters",
     //   lineWidthMinPixels: 1
     // }),
-    // new TextLayer({
-    //   id: "heading-layer",
-    //   data: filteredData?.features ?? [],
-    //   pickable: false,
-    //   getPosition: (d: Feature<Point, PilotProperties>) => [
-    //     d.properties.data.longitude,
-    //     d.properties.data.latitude,
-    //   ],
-    //   getText: (d: Feature<Point, PilotProperties>) => d.properties.data.heading.toString(),
-    //   getSize: 12,
-    //   getColor: [0, 0, 0],
-    //   getAlignmentBaseline: "bottom",
-    // }),
+    new TextLayer({
+      id: "heading-layer",
+      data: filteredData?.features ?? [],
+      pickable: false,
+      getPosition: (d: Feature<Point, PilotProperties>) => [
+        d.properties.data.longitude,
+        d.properties.data.latitude,
+      ],
+      getText: (d: Feature<Point, PilotProperties>) => {
+        const lines = [];
+        if (callsign) {
+          lines.push(d.properties.data.callsign);
+        }
+        if (speed) {
+          lines.push(`${d.properties.data.groundspeed}kts`);
+        }
+        if (altitude) {
+          lines.push(`${d.properties.data.altitude}ft`);
+        }
+        if (destination && d.properties.data.flight_plan) {
+          lines.push(d.properties.data.flight_plan.arrival);
+        }
+
+        return lines.join("\n");
+      },
+      getSize: 12,
+      getColor: [0, 0, 0],
+      getAlignmentBaseline: "top",
+      getPixelOffset: (d: Feature<Point, PilotProperties>) => {
+        const aircraftType = d.properties.data.flight_plan?.aircraft_short?.toLowerCase();
+        return [0, Math.round(getAircraftIcon(aircraftType).width)];
+      },
+      updateTriggers: { getText: [callsign, speed, altitude, destination] },
+    }),
     new GeoJsonLayer({
       id: "boundaries",
       data: artccs as unknown as FeatureCollection,
@@ -215,75 +258,119 @@ function App() {
   return (
     <div className="flex min-h-dvh min-w-dvw font-manrope">
       {/* Sidebar */}
-      <div className="w-[250px] bg-slate-900 p-6 overflow-y-auto overscroll-contain z-10 shadow-md text-white flex flex-col">
+      <div className="bg-slate-900 p-6 overflow-y-auto overscroll-contain z-10 shadow-md text-white flex flex-col space-y-5">
         <h1 className="text-2xl font-bold">Traffic Replay</h1>
-        <h2 style={{ marginBottom: "20px" }}>Airport Filters</h2>
 
-        {/* Arrival Airports */}
-        <div style={{ marginBottom: "20px" }}>
-          <h3>IFR Routes</h3>
-          <form
-            className="flex space-x-4 items-end"
-            onSubmit={handleAddRouteFilter}
-            style={{ marginBottom: "10px" }}
-          >
-            <div className="flex flex-col space-y-2">
-              <label className="text-sm text-neutral-300">Departure</label>
-              <input
-                type="text"
-                value={newDepartureAirport}
-                onChange={(e) => setNewDepartureAirport(e.target.value)}
-                placeholder="ICAO"
-                maxLength={4}
-                className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+        <div className="flex flex-col space-y-2">
+          <div>
+            <div className="mb-2">
+              <h2 className="text-xl">Label Displays</h2>
+            </div>
+            <div className="border rounded border-slate-600 p-2 flex flex-col space-y-2">
+              <StyledCheckbox
+                label="Callsign"
+                checked={callsign}
+                onCheckedChange={(checked) => setCallsign(checked)}
+              />
+              <StyledCheckbox
+                label="Speed"
+                checked={speed}
+                onCheckedChange={(checked) => setSpeed(checked)}
+              />
+              <StyledCheckbox
+                label="Altitude"
+                checked={altitude}
+                onCheckedChange={(checked) => setAltitude(checked)}
+              />
+              <StyledCheckbox
+                label="Destination"
+                checked={destination}
+                onCheckedChange={(checked) => setDestination(checked)}
               />
             </div>
-            <div className="flex flex-col space-y-2">
-              <label className="text-sm text-neutral-300">Arrival</label>
-              <input
-                type="text"
-                value={newArrivalAirport}
-                onChange={(e) => setNewArrivalAirport(e.target.value)}
-                placeholder="ICAO"
-                maxLength={4}
-                className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+          </div>
+        </div>
+
+        <div className="flex flex-col space-y-2">
+          <div>
+            <div className="mb-2">
+              <h2 className="text-xl">Ground Filters</h2>
+            </div>
+            <div className="border rounded border-slate-600 p-2 flex flex-col space-y-2">
+              <StyledCheckbox
+                label="Hide aircraft < 30kts"
+                checked={hideSlowAircraft}
+                onCheckedChange={(checked) => setHideSlowAircraft(checked)}
               />
             </div>
+          </div>
+        </div>
 
-            <button
-              type="submit"
-              className="p-1 rounded cursor-pointer bg-sky-600 hover:bg-sky-500 transition-colors w-8 h-8 flex items-center"
-            >
-              <PlusIcon />
-            </button>
-          </form>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {routeFilters.map((route) => (
-              <div
-                key={`${route.departure}-${route.arrival}`}
-                style={{
-                  backgroundColor: "#e0e0e0",
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
+        <div className="flex flex-col space-y-2">
+          <div>
+            <div className="mb-2">
+              <h2 className="text-xl">Route Filters</h2>
+            </div>
+            <div className="border rounded border-slate-600 p-2">
+              <form
+                className="flex space-x-4 items-end"
+                onSubmit={handleAddRouteFilter}
+                style={{ marginBottom: "10px" }}
               >
-                {route.departure}-{route.arrival}
+                <div className="flex flex-col space-y-2">
+                  <label className="text-sm text-neutral-300">Departure</label>
+                  <input
+                    type="text"
+                    value={newDepartureAirport}
+                    onChange={(e) => setNewDepartureAirport(e.target.value)}
+                    placeholder="ICAO"
+                    maxLength={4}
+                    className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+                  />
+                </div>
+                <div className="flex flex-col space-y-2">
+                  <label className="text-sm text-neutral-300">Arrival</label>
+                  <input
+                    type="text"
+                    value={newArrivalAirport}
+                    onChange={(e) => setNewArrivalAirport(e.target.value)}
+                    placeholder="ICAO"
+                    maxLength={4}
+                    className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+                  />
+                </div>
+
                 <button
-                  onClick={() => handleRemoveRouteFilter(route)}
-                  style={{
-                    border: "none",
-                    background: "none",
-                    cursor: "pointer",
-                    padding: "0 4px",
-                  }}
+                  type="submit"
+                  className="p-1 rounded cursor-pointer bg-sky-600 hover:bg-sky-500 transition-colors w-8 h-8 flex items-center"
                 >
-                  ×
+                  <PlusIcon />
                 </button>
+              </form>
+              <div className="italic text-sm text-neutral-300">
+                Use * as a wildcard for any airport
               </div>
-            ))}
+              <div className="flex flex-col space-y-2 mt-4">
+                {routeFilters.map((route) => (
+                  <div
+                    key={`${route.departure}-${route.arrival}`}
+                    className="bg-sky-600 items-center rounded py-1 px-2 font-mono w-40 flex"
+                  >
+                    <p className="grow flex space-x-1">
+                      <span className="w-9">{route.departure}</span>
+                      <span>-</span>
+                      <span className="w-9">{route.arrival}</span>
+                    </p>
+                    <button
+                      onClick={() => handleRemoveRouteFilter(route)}
+                      className="cursor-pointer pr-1"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -324,27 +411,13 @@ function App() {
                 <Slider.Range className="absolute h-full rounded-full bg-slate-700" />
               </Slider.Track>
               <Slider.Thumb
-                className="block size-5 rounded-[10px] bg-white shadow-[0_2px_10px] shadow-black hover:bg-sky-600 transition-colors focus:shadow-[0_0_0_5px] focus:shadow-black focus:outline-none"
+                className="block size-5 rounded-[10px] bg-white shadow-[0_2px_10px] shadow-black hover:bg-sky-600 transition-colors focus:shadow-[0_0_0_5px] focus:shadow-black focus:outline-none focus:bg-sky-600"
                 aria-label="Volume"
               >
                 <div className="relative -top-8 -left-6 font-mono">{timestampString}</div>
               </Slider.Thumb>
             </Slider.Root>
           </form>
-          <button
-            className="ml-2"
-            onClick={() => setSliderIndex((prevState) => Math.max(prevState - 1, 0))}
-          >
-            Prev
-          </button>
-          <button
-            className="ml-2"
-            onClick={() =>
-              setSliderIndex((prevState) => Math.min(prevState + 1, timestamps.length - 1))
-            }
-          >
-            Next
-          </button>
         </div>
       </div>
     </div>
