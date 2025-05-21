@@ -10,7 +10,7 @@ import { Slider } from "radix-ui";
 import type { Feature } from "geojson";
 import type { FlightPlan } from "./types/vatsim-capture.ts";
 import { getAircraftIcon } from "./utils/icons.ts";
-import {Play} from "lucide-react";
+import { Play, PlusIcon } from "lucide-react";
 
 // Replace with your Mapbox access token
 const MAPBOX_ACCESS_TOKEN =
@@ -222,17 +222,21 @@ function App() {
         {/* Arrival Airports */}
         <div style={{ marginBottom: "20px" }}>
           <h3>IFR Routes</h3>
-          <form className="flex space-x-4" onSubmit={handleAddRouteFilter} style={{ marginBottom: "10px" }}>
+          <form
+            className="flex space-x-4 items-end"
+            onSubmit={handleAddRouteFilter}
+            style={{ marginBottom: "10px" }}
+          >
             <div className="flex flex-col space-y-2">
               <label className="text-sm text-neutral-300">Departure</label>
-            <input
-              type="text"
-              value={newDepartureAirport}
-              onChange={(e) => setNewDepartureAirport(e.target.value)}
-              placeholder="ICAO"
-              maxLength={4}
-              className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
-            />
+              <input
+                type="text"
+                value={newDepartureAirport}
+                onChange={(e) => setNewDepartureAirport(e.target.value)}
+                placeholder="ICAO"
+                maxLength={4}
+                className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+              />
             </div>
             <div className="flex flex-col space-y-2">
               <label className="text-sm text-neutral-300">Arrival</label>
@@ -248,16 +252,9 @@ function App() {
 
             <button
               type="submit"
-              style={{
-                padding: "8px 12px",
-                backgroundColor: "#4CAF50",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
+              className="p-1 rounded cursor-pointer bg-sky-600 hover:bg-sky-500 transition-colors w-8 h-8 flex items-center"
             >
-              Add
+              <PlusIcon />
             </button>
           </form>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
