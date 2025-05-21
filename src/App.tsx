@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, type FormEvent } from "react";
 import DeckGL from "@deck.gl/react";
 import { GeoJsonLayer, IconLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { Map } from "react-map-gl/mapbox";
-import trafficData from "./consolidated3.json";
+//import trafficData from "./consolidated3.json";
 import artccs from "./artccs.json";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { FeatureCollection, Point } from "geojson";
@@ -49,6 +49,8 @@ function App() {
     bearing: 0,
   });
 
+  const [trafficData, setTrafficData] = useState<TrafficData>({});
+
   const [timestamps, setTimestamps] = useState<string[]>([]);
   const [sliderIndex, setSliderIndex] = useState(0);
 
@@ -85,9 +87,22 @@ function App() {
   );
 
   useEffect(() => {
-    // Extract timestamps from the data
-    const timestamps = Object.keys(trafficData).sort();
-    setTimestamps(timestamps);
+    // get data
+    const fetchData = async () => {
+      const response = await fetch(
+        "https://pub-22f92118e0b54022a686301adc9b496e.r2.dev/consolidated3.json",
+      );
+      if (response.ok) {
+        const data = (await response.json()) as TrafficData;
+        setTrafficData(data);
+
+        // Extract timestamps from the data
+        const timestamps = Object.keys(data).sort();
+        setTimestamps(timestamps);
+      }
+    };
+
+    fetchData().catch(console.error);
   }, []);
 
   const currentData = useMemo(
