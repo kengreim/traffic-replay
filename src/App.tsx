@@ -305,7 +305,7 @@ function App() {
         if (!hasMore) {
           setIsPlaying(false);
         }
-      }, 1000);
+      }, 1000 / playbackSpeed);
     } else if (playIntervalRef.current !== null) {
       window.clearInterval(playIntervalRef.current);
       playIntervalRef.current = null;
@@ -316,7 +316,7 @@ function App() {
         window.clearInterval(playIntervalRef.current);
       }
     };
-  }, [isPlaying]);
+  }, [isPlaying, playbackSpeed]);
 
   return (
     <div className="min-w-dvw font-manrope flex min-h-dvh">
