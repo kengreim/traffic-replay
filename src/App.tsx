@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo, type FormEvent } from "react";
+import { useState, useEffect, useMemo, type FormEvent, useRef } from "react";
 import DeckGL from "@deck.gl/react";
 import { GeoJsonLayer, IconLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { Map } from "react-map-gl/mapbox";
-//import trafficData from "./consolidated3.json";
+import trafficDataDev from "./consolidated3.json";
 import artccs from "./artccs.json";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { FeatureCollection, Point } from "geojson";
@@ -10,7 +10,7 @@ import { Slider } from "radix-ui";
 import type { Feature } from "geojson";
 import type { FlightPlan } from "./types/vatsim-capture.ts";
 import { getAircraftIcon } from "./utils/icons.ts";
-import { PlusIcon, X } from "lucide-react";
+import { Play, PlusIcon, StepBack, StepForward, X } from "lucide-react";
 import { StyledCheckbox } from "./components/ui-core/Checkbox.tsx";
 import type { CheckedState } from "./components/ui-core/Checkbox.tsx";
 
@@ -68,6 +68,10 @@ function App() {
   // Groundspeed filter
   const [hideSlowAircraft, setHideSlowAircraft] = useState<CheckedState>(false);
 
+  // State for playing
+  const [isPlaying, setIsPlaying] = useState(false);
+  const playInterval = useRef(null);
+
   // Aircraft rings
   const [rings, setRings] = useState<CheckedState>(false);
   const [ringsDistance, setRingsDistance] = useState(3);
@@ -102,7 +106,14 @@ function App() {
       }
     };
 
-    fetchData().catch(console.error);
+    if (import.meta.env.PROD) {
+      fetchData().catch(console.error);
+    } else {
+      const data = trafficDataDev as TrafficData;
+      setTrafficData(data);
+      const timestamps = Object.keys(data).sort();
+      setTimestamps(timestamps);
+    }
   }, []);
 
   const currentData = useMemo(
@@ -172,30 +183,6 @@ function App() {
   const handleRemoveRouteFilter = (route: { arrival: string; departure: string }) => {
     setRouteFilters(routeFilters.filter((r) => r != route));
   };
-
-  //
-  // const layers = [
-  //   new GeoJsonLayer({
-  //     id: "geojson-layer",
-  //     data: filteredData,
-  //     pickable: true,
-  //     stroked: false,
-  //     filled: true,
-  //     extruded: true,
-  //     pointType: "circle+text",
-  //     lineWidthScale: 20,
-  //     lineWidthMinPixels: 2,
-  //     getFillColor: [255, 0, 0],
-  //     getLineColor: [0, 0, 0],
-  //     getPointRadius: 50,
-  //     pointRadiusMinPixels: 2,
-  //     getLineWidth: 1,
-  //     getElevation: 30,
-  //     getText: (f: Feature<Geometry, PilotProperties>) => f.properties.data.callsign,
-  //     getTextSize: 12,
-  //     getTextPixelOffset: [0, 15],
-  //     getTextColor: [0, 0, 0],
-  //   }),];
 
   const layers = [
     new IconLayer({
@@ -281,6 +268,36 @@ function App() {
       lineWidthMinPixels: 2,
     }),
   ];
+
+  const incrementTimeSlider = () => {
+    let current = sliderIndex;
+    let next = Math.min(current + 1, timestamps.length - 1);
+    if (current === next) {
+      return false;
+    } else {
+      setSliderIndex(next);
+      return true;
+    }
+  };
+
+  const decrementTimeSlider = () => {
+    let current = sliderIndex;
+    let next = Math.max(current - 1, 0);
+    if (current === next) {
+      return false;
+    } else {
+      setSliderIndex(next);
+      return true;
+    }
+  };
+  //
+  // useEffect(() => {
+  //   if (isPlaying) {
+  //     playInterval = setInterval(() => {
+  //       incrementTimer()
+  //     })
+  //   }
+  // }, [isPlaying])
 
   return (
     <div className="flex min-h-dvh min-w-dvw font-manrope">
@@ -442,39 +459,57 @@ function App() {
         </DeckGL>
 
         <div
-          style={{
-            position: "absolute",
-            bottom: "20px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "80%",
-            padding: "20px",
-            backgroundColor: "rgba(255, 255, 255, 0.9)",
-            borderRadius: "8px",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-          }}
+          className="absolute bottom-5 w-full p-5"
+
+          // style={{
+          //   position: "absolute",
+          //   bottom: "20px",
+          //   left: "50%",
+          //   transform: "translateX(-50%)",
+          //   width: "80%",
+          //   padding: "20px",
+          //   backgroundColor: "rgba(255, 255, 255, 0.9)",
+          //   borderRadius: "8px",
+          //   boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+          // }}
         >
-          <form className="px-4">
-            <Slider.Root
-              className="relative flex h-5 w-full touch-none select-none items-center pt-7"
-              defaultValue={[0]}
-              min={0}
-              max={timestamps.length - 1}
-              step={1}
-              value={[sliderIndex]}
-              onValueChange={(v) => setSliderIndex(v[0])}
-            >
-              <Slider.Track className="relative h-[3px] grow rounded-full bg-neutral-300">
-                <Slider.Range className="absolute h-full rounded-full bg-slate-700" />
-              </Slider.Track>
-              <Slider.Thumb
-                className="block size-5 rounded-[10px] bg-white shadow-[0_2px_10px] shadow-black hover:bg-sky-600 transition-colors focus:shadow-[0_0_0_5px] focus:shadow-black focus:outline-none focus:bg-sky-600"
-                aria-label="Volume"
-              >
-                <div className="relative -top-8 -left-6 font-mono">{timestampString}</div>
-              </Slider.Thumb>
-            </Slider.Root>
-          </form>
+          <div className="bg-white/90 rounded shadow p-5 flex items-end">
+            <div className="flex">
+              <StepBack className="hover:scale-110" onClick={() => decrementTimeSlider()} />
+              <Play onClick={() => {}} />
+              <StepForward
+                className="hover:scale-110"
+                onClick={() => {
+                  incrementTimeSlider();
+                }}
+              />
+            </div>
+            <div className="grow ml-6">
+              <form className="px-4">
+                <Slider.Root
+                  className="relative flex h-5 w-full touch-none select-none items-center pt-7"
+                  defaultValue={[0]}
+                  min={0}
+                  max={timestamps.length - 1}
+                  step={1}
+                  value={[sliderIndex]}
+                  onValueChange={(v) => setSliderIndex(v[0])}
+                  onPointerDown={() => console.log("down")}
+                  onPointerUp={() => console.log("up")}
+                >
+                  <Slider.Track className="relative h-[3px] grow rounded-full bg-neutral-300">
+                    <Slider.Range className="absolute h-full rounded-full bg-slate-700" />
+                  </Slider.Track>
+                  <Slider.Thumb
+                    className="block size-5 rounded-[10px] bg-white shadow-[0_2px_10px] shadow-black hover:bg-sky-600 transition-colors focus:shadow-[0_0_0_5px] focus:shadow-black focus:outline-none focus:bg-sky-600"
+                    aria-label="Volume"
+                  >
+                    <div className="relative -top-8 -left-6 font-mono">{timestampString}</div>
+                  </Slider.Thumb>
+                </Slider.Root>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
     </div>
