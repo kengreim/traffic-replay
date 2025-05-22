@@ -12,7 +12,7 @@ use std::io::{Read, Write};
 use std::path::Path;
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
-use tokio::sync::mpsc::Sender;
+use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::time::sleep;
 use tracing::dispatcher::SetGlobalDefaultError;
 use tracing::{debug, error, info, warn};
@@ -122,64 +122,6 @@ async fn main() -> Result<(), anyhow::Error> {
     let x = artccs_bounding_rect(&artccs, &vec!["ZOA", "ZLA"])?;
     println!("{:?}", x);
 
-    // let mut all_snapshots = HashMap::new();
-    //
-    // for path in WalkDir::new("./src/captures")
-    //     .min_depth(1)
-    //     .max_depth(1)
-    //     .into_iter()
-    //     .filter_map(|e| e.ok())
-    //     .filter(|e| e.file_type().is_file())
-    //     .map(|e| e.into_path())
-    // {
-    //     if let Ok(file) = File::open(&path) {
-    //         let pilots: Vec<vatsim_utils::models::Pilot> = serde_json::from_reader(file).unwrap();
-    //         let update = path.file_stem().unwrap().to_str().unwrap();
-    //
-    //         let features = pilots.into_iter().map(|pilot| {
-    //             let geometry = Some(Value::Point(vec![pilot.longitude, pilot.latitude]).into());
-    //             let id = Some(Id::Number(pilot.cid.into()));
-    //
-    //             let mut properties = JsonObject::new();
-    //             properties.insert(
-    //                 "data".to_string(),
-    //                 serde_json::to_value(PilotData::from(pilot))
-    //                     .expect("could not serialize Pilot")
-    //                     .into(),
-    //             );
-    //
-    //             Feature {
-    //                 bbox: None,
-    //                 geometry,
-    //                 id,
-    //                 properties: Some(properties),
-    //                 foreign_members: None,
-    //             }
-    //         });
-    //
-    //         let collection = FeatureCollection {
-    //             bbox: None,
-    //             features: features.collect::<Vec<_>>(),
-    //             foreign_members: None,
-    //         };
-    //
-    //         // let snapshot = pilots
-    //         //     .into_iter()
-    //         //     .map(|p| PilotSnapshot::from((update.to_string(), p)))
-    //         //     .collect::<Vec<_>>();
-    //         all_snapshots.insert(update.to_string(), collection);
-    //     }
-    // }
-    //
-    // let mut file = File::create("./src/consolidated3.json").expect("Could not create file");
-    // if let Err(e) = file.write_all(
-    //     &serde_json::to_string(&all_snapshots)
-    //         .expect("could not serialize")
-    //         .into_bytes(),
-    // ) {
-    //     warn!("Could not write to file: {}", e);
-    // }
-
     // // Set up VATSIM Datafeed
     // let api = Vatsim::new()
     //     .await
@@ -199,35 +141,9 @@ async fn main() -> Result<(), anyhow::Error> {
     // ];
     //
     // let bounding_poly = Polygon::new(LineString::from(bounding_coords), vec![]);
-    //
-    // println!("Starting datafeed processor");
-    // while let Some(mut datafeed) = rx.recv().await {
-    //     let captured_pilots = datafeed
-    //         .pilots
-    //         .retain(|p| bounding_poly.contains(&point! { x: p.longitude, y: p.latitude }));
-    //
-    //     let filename = format!("./src/captures/{}.json", datafeed.general.update);
-    //     let mut file = File::create(&filename).expect("Could not create file");
-    //     if let Err(e) = file.write_all(
-    //         &serde_json::to_string(&captured_pilots)
-    //             .expect("could not serialize")
-    //             .into_bytes(),
-    //     ) {
-    //         warn!("Could not write to file: {}", e);
-    //     }
-    //
-    //     println!("{:?}", datafeed.general.update);
-    // }
 
     Ok(())
 }
-
-// async fn datafeed_processor(mut rx: Receiver<V3ResponseData>) {
-//     println!("Starting datafeed processor");
-//     while let Some(datafeed) = rx.recv().await {
-//         println!("{:?}", datafeed.general.update);
-//     }
-// }
 
 async fn datafeed_loop(api: Vatsim, tx: Sender<V3ResponseData>, end_time: DateTime<Utc>) {
     let mut last_datafeed_update = String::new();
@@ -288,6 +204,85 @@ async fn datafeed_loop(api: Vatsim, tx: Sender<V3ResponseData>, end_time: DateTi
         let sleep_duration = Duration::from_secs(5) - min(Duration::from_secs(4), loop_time);
         debug!(?sleep_duration, "Sleeping");
         sleep(sleep_duration).await;
+    }
+}
+
+async fn process_datafeeds(rx: Receiver<V3ResponseData>) -> Result<(), anyhow::Error> {
+    println!("Starting datafeed processor");
+    // while let Some(mut datafeed) = rx.recv().await {
+    //     let captured_pilots = datafeed
+    //         .pilots
+    //         .retain(|p| bounding_poly.contains(&point! { x: p.longitude, y: p.latitude }));
+    //
+    //     let filename = format!("./src/captures/{}.json", datafeed.general.update);
+    //     let mut file = File::create(&filename).expect("Could not create file");
+    //     if let Err(e) = file.write_all(
+    //         &serde_json::to_string(&captured_pilots)
+    //             .expect("could not serialize")
+    //             .into_bytes(),
+    //     ) {
+    //         warn!("Could not write to file: {}", e);
+    //     }
+    //
+    //     println!("{:?}", datafeed.general.update);
+    // }
+
+    Ok(())
+}
+
+fn combine_captures() {
+    let mut all_snapshots = HashMap::new();
+
+    for path in WalkDir::new("./src/captures")
+        .min_depth(1)
+        .max_depth(1)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_type().is_file())
+        .map(|e| e.into_path())
+    {
+        if let Ok(file) = File::open(&path) {
+            let pilots: Vec<vatsim_utils::models::Pilot> = serde_json::from_reader(file).unwrap();
+            let update = path.file_stem().unwrap().to_str().unwrap();
+
+            let features = pilots.into_iter().map(|pilot| {
+                let geometry = Some(Value::Point(vec![pilot.longitude, pilot.latitude]).into());
+                let id = Some(Id::Number(pilot.cid.into()));
+
+                let mut properties = JsonObject::new();
+                properties.insert(
+                    "data".to_string(),
+                    serde_json::to_value(PilotData::from(pilot))
+                        .expect("could not serialize Pilot")
+                        .into(),
+                );
+
+                Feature {
+                    bbox: None,
+                    geometry,
+                    id,
+                    properties: Some(properties),
+                    foreign_members: None,
+                }
+            });
+
+            let collection = FeatureCollection {
+                bbox: None,
+                features: features.collect::<Vec<_>>(),
+                foreign_members: None,
+            };
+
+            all_snapshots.insert(update.to_string(), collection);
+        }
+    }
+
+    let mut file = File::create("./src/consolidated3.json").expect("Could not create file");
+    if let Err(e) = file.write_all(
+        &serde_json::to_string(&all_snapshots)
+            .expect("could not serialize")
+            .into_bytes(),
+    ) {
+        warn!("Could not write to file: {}", e);
     }
 }
 

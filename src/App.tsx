@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo, type FormEvent } from "react";
+import { useState, useEffect, useMemo, type FormEvent, useRef } from "react";
 import DeckGL from "@deck.gl/react";
 import { GeoJsonLayer, IconLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { Map } from "react-map-gl/mapbox";
-//import trafficData from "./consolidated3.json";
+import trafficDataDev from "./consolidated3.json";
 import artccs from "./artccs.json";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { FeatureCollection, Point } from "geojson";
@@ -10,7 +10,7 @@ import { Slider } from "radix-ui";
 import type { Feature } from "geojson";
 import type { FlightPlan } from "./types/vatsim-capture.ts";
 import { getAircraftIcon } from "./utils/icons.ts";
-import { PlusIcon, X } from "lucide-react";
+import { Play, PlusIcon, StepBack, StepForward, X, Pause } from "lucide-react";
 import { StyledCheckbox } from "./components/ui-core/Checkbox.tsx";
 import type { CheckedState } from "./components/ui-core/Checkbox.tsx";
 
@@ -68,6 +68,12 @@ function App() {
   // Groundspeed filter
   const [hideSlowAircraft, setHideSlowAircraft] = useState<CheckedState>(false);
 
+  // State for playing
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const playIntervalRef = useRef<number | null>(null);
+  const pointerDownSuspendedPlay = useRef(false);
+
   // Aircraft rings
   const [rings, setRings] = useState<CheckedState>(false);
   const [ringsDistance, setRingsDistance] = useState(3);
@@ -102,7 +108,14 @@ function App() {
       }
     };
 
-    fetchData().catch(console.error);
+    if (import.meta.env.PROD) {
+      fetchData().catch(console.error);
+    } else {
+      const data = trafficDataDev as TrafficData;
+      setTrafficData(data);
+      const timestamps = Object.keys(data).sort();
+      setTimestamps(timestamps);
+    }
   }, []);
 
   const currentData = useMemo(
@@ -172,30 +185,6 @@ function App() {
   const handleRemoveRouteFilter = (route: { arrival: string; departure: string }) => {
     setRouteFilters(routeFilters.filter((r) => r != route));
   };
-
-  //
-  // const layers = [
-  //   new GeoJsonLayer({
-  //     id: "geojson-layer",
-  //     data: filteredData,
-  //     pickable: true,
-  //     stroked: false,
-  //     filled: true,
-  //     extruded: true,
-  //     pointType: "circle+text",
-  //     lineWidthScale: 20,
-  //     lineWidthMinPixels: 2,
-  //     getFillColor: [255, 0, 0],
-  //     getLineColor: [0, 0, 0],
-  //     getPointRadius: 50,
-  //     pointRadiusMinPixels: 2,
-  //     getLineWidth: 1,
-  //     getElevation: 30,
-  //     getText: (f: Feature<Geometry, PilotProperties>) => f.properties.data.callsign,
-  //     getTextSize: 12,
-  //     getTextPixelOffset: [0, 15],
-  //     getTextColor: [0, 0, 0],
-  //   }),];
 
   const layers = [
     new IconLayer({
@@ -282,10 +271,57 @@ function App() {
     }),
   ];
 
+  const incrementTimeSlider = () => {
+    setSliderIndex((current) => {
+      const next = Math.min(current + 1, timestamps.length - 1);
+      if (current === next) {
+        setIsPlaying(false);
+        return current;
+      }
+      return next;
+    });
+    return sliderIndex < timestamps.length - 1;
+  };
+
+  const decrementTimeSlider = () => {
+    setSliderIndex((current) => {
+      const next = Math.max(current - 1, 0);
+      if (current === next) {
+        return current;
+      }
+      return next;
+    });
+    return sliderIndex > 0;
+  };
+
+  const togglePlayback = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  useEffect(() => {
+    if (isPlaying) {
+      playIntervalRef.current = window.setInterval(() => {
+        const hasMore = incrementTimeSlider();
+        if (!hasMore) {
+          setIsPlaying(false);
+        }
+      }, 1000);
+    } else if (playIntervalRef.current !== null) {
+      window.clearInterval(playIntervalRef.current);
+      playIntervalRef.current = null;
+    }
+
+    return () => {
+      if (playIntervalRef.current !== null) {
+        window.clearInterval(playIntervalRef.current);
+      }
+    };
+  }, [isPlaying]);
+
   return (
-    <div className="flex min-h-dvh min-w-dvw font-manrope">
+    <div className="min-w-dvw font-manrope flex min-h-dvh">
       {/* Sidebar */}
-      <div className="bg-slate-900 p-6 overflow-y-auto overscroll-contain z-10 shadow-md text-white flex flex-col space-y-5">
+      <div className="z-10 flex flex-col space-y-5 overflow-y-auto overscroll-contain bg-slate-900 p-6 text-white shadow-md">
         <h1 className="text-2xl font-bold">Traffic Replay</h1>
 
         <div className="flex flex-col space-y-2">
@@ -293,7 +329,7 @@ function App() {
             <div className="mb-2">
               <h2 className="text-xl">Label Displays</h2>
             </div>
-            <div className="border rounded border-slate-600 p-2 flex flex-col space-y-2">
+            <div className="flex flex-col space-y-2 rounded border border-slate-600 p-2">
               <StyledCheckbox
                 label="Callsign"
                 checked={callsign}
@@ -323,14 +359,14 @@ function App() {
             <div className="mb-2">
               <h2 className="text-xl">Aircraft Rings</h2>
             </div>
-            <div className="border rounded border-slate-600 p-2 flex flex-col space-y-2">
+            <div className="flex flex-col space-y-2 rounded border border-slate-600 p-2">
               <StyledCheckbox
                 label="Show rings"
                 checked={rings}
                 onCheckedChange={(checked) => setRings(checked)}
               />
               {rings && (
-                <div className="flex space-x-3 items-center">
+                <div className="flex items-center space-x-3">
                   <input
                     type="number"
                     min={0}
@@ -339,7 +375,7 @@ function App() {
                     value={ringsDistance}
                     onChange={(e) => setRingsDistance(parseFloat(e.target.value))}
                     placeholder="3"
-                    className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+                    className="w-18 rounded-sm border border-neutral-600 p-1 font-mono uppercase focus:bg-slate-700 focus:outline-1 focus:outline-white"
                   />
                   <p>Radius (nm)</p>
                 </div>
@@ -353,7 +389,7 @@ function App() {
             <div className="mb-2">
               <h2 className="text-xl">Ground Filters</h2>
             </div>
-            <div className="border rounded border-slate-600 p-2 flex flex-col space-y-2">
+            <div className="flex flex-col space-y-2 rounded border border-slate-600 p-2">
               <StyledCheckbox
                 label="Hide aircraft < 30kts"
                 checked={hideSlowAircraft}
@@ -368,9 +404,9 @@ function App() {
             <div className="mb-2">
               <h2 className="text-xl">Route Filters</h2>
             </div>
-            <div className="border rounded border-slate-600 p-2">
+            <div className="rounded border border-slate-600 p-2">
               <form
-                className="flex space-x-4 items-end"
+                className="flex items-end space-x-4"
                 onSubmit={handleAddRouteFilter}
                 style={{ marginBottom: "10px" }}
               >
@@ -382,7 +418,7 @@ function App() {
                     onChange={(e) => setNewDepartureAirport(e.target.value)}
                     placeholder="ICAO"
                     maxLength={4}
-                    className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+                    className="w-18 rounded-sm border border-neutral-600 p-1 font-mono uppercase focus:bg-slate-700 focus:outline-1 focus:outline-white"
                   />
                 </div>
                 <div className="flex flex-col space-y-2">
@@ -393,27 +429,27 @@ function App() {
                     onChange={(e) => setNewArrivalAirport(e.target.value)}
                     placeholder="ICAO"
                     maxLength={4}
-                    className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+                    className="w-18 rounded-sm border border-neutral-600 p-1 font-mono uppercase focus:bg-slate-700 focus:outline-1 focus:outline-white"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="p-1 rounded cursor-pointer bg-sky-600 hover:bg-sky-500 transition-colors w-8 h-8 flex items-center"
+                  className="flex h-8 w-8 cursor-pointer items-center rounded bg-sky-600 p-1 transition-colors hover:bg-sky-500"
                 >
                   <PlusIcon />
                 </button>
               </form>
-              <div className="italic text-sm text-neutral-300">
+              <div className="text-sm italic text-neutral-300">
                 Use * as a wildcard for any airport
               </div>
-              <div className="flex flex-col space-y-2 mt-4">
+              <div className="mt-4 flex flex-col space-y-2">
                 {routeFilters.map((route) => (
                   <div
                     key={`${route.departure}-${route.arrival}`}
-                    className="bg-sky-600 items-center rounded py-1 px-2 font-mono w-40 flex"
+                    className="flex w-40 items-center rounded bg-sky-600 px-2 py-1 font-mono"
                   >
-                    <p className="grow flex space-x-1">
+                    <p className="flex grow space-x-1">
                       <span className="w-9">{route.departure}</span>
                       <span>-</span>
                       <span className="w-9">{route.arrival}</span>
@@ -442,39 +478,100 @@ function App() {
         </DeckGL>
 
         <div
-          style={{
-            position: "absolute",
-            bottom: "20px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "80%",
-            padding: "20px",
-            backgroundColor: "rgba(255, 255, 255, 0.9)",
-            borderRadius: "8px",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-          }}
+          className="absolute bottom-5 w-full p-5"
+
+          // style={{
+          //   position: "absolute",
+          //   bottom: "20px",
+          //   left: "50%",
+          //   transform: "translateX(-50%)",
+          //   width: "80%",
+          //   padding: "20px",
+          //   backgroundColor: "rgba(255, 255, 255, 0.9)",
+          //   borderRadius: "8px",
+          //   boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+          // }}
         >
-          <form className="px-4">
-            <Slider.Root
-              className="relative flex h-5 w-full touch-none select-none items-center pt-7"
-              defaultValue={[0]}
-              min={0}
-              max={timestamps.length - 1}
-              step={1}
-              value={[sliderIndex]}
-              onValueChange={(v) => setSliderIndex(v[0])}
-            >
-              <Slider.Track className="relative h-[3px] grow rounded-full bg-neutral-300">
-                <Slider.Range className="absolute h-full rounded-full bg-slate-700" />
-              </Slider.Track>
-              <Slider.Thumb
-                className="block size-5 rounded-[10px] bg-white shadow-[0_2px_10px] shadow-black hover:bg-sky-600 transition-colors focus:shadow-[0_0_0_5px] focus:shadow-black focus:outline-none focus:bg-sky-600"
-                aria-label="Volume"
-              >
-                <div className="relative -top-8 -left-6 font-mono">{timestampString}</div>
-              </Slider.Thumb>
-            </Slider.Root>
-          </form>
+          <div className="flex items-end rounded bg-neutral-50/90 px-5 py-2 shadow">
+            <div className="flex flex-col items-center">
+              <div className="flex">
+                <StepBack
+                  className="cursor-pointer hover:scale-105"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    decrementTimeSlider();
+                  }}
+                />
+                {isPlaying ? (
+                  <Pause className="cursor-pointer hover:scale-105" onClick={togglePlayback} />
+                ) : (
+                  <Play className="cursor-pointer hover:scale-105" onClick={togglePlayback} />
+                )}
+                <StepForward
+                  className="cursor-pointer hover:scale-105"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    incrementTimeSlider();
+                  }}
+                />
+              </div>
+              <div className="mt-2">
+                <select
+                  id="playback-speed"
+                  value={playbackSpeed}
+                  onChange={(e) => {
+                    setPlaybackSpeed(Number(e.target.value));
+                    if (isPlaying) {
+                      setIsPlaying(false);
+                      setTimeout(() => setIsPlaying(true), 0);
+                    }
+                  }}
+                  className="rounded border border-gray-300 px-2 py-1 text-sm"
+                >
+                  <option value={1}>1x</option>
+                  <option value={2}>2x</option>
+                  <option value={4}>4x</option>
+                  <option value={8}>8x</option>
+                  <option value={16}>16x</option>
+                </select>
+              </div>
+            </div>
+            <div className="mb-5 ml-6 grow">
+              <form className="px-4">
+                <Slider.Root
+                  className="relative flex h-5 w-full touch-none select-none items-center pt-7"
+                  defaultValue={[0]}
+                  min={0}
+                  max={timestamps.length - 1}
+                  step={1}
+                  value={[sliderIndex]}
+                  onValueChange={(v) => setSliderIndex(v[0])}
+                  onPointerDown={() => {
+                    if (isPlaying) {
+                      setIsPlaying(false);
+                      pointerDownSuspendedPlay.current = true;
+                    }
+                  }}
+                  onPointerUp={() => {
+                    if (pointerDownSuspendedPlay.current) {
+                      setIsPlaying(true);
+                      pointerDownSuspendedPlay.current = false;
+                    }
+                  }}
+                >
+                  <Slider.Track className="relative h-[3px] grow rounded-full bg-neutral-300">
+                    <Slider.Range className="absolute h-full rounded-full bg-slate-700" />
+                  </Slider.Track>
+                  <Slider.Thumb
+                    className="block size-5 rounded-[10px] bg-white shadow-[0_2px_10px] shadow-black transition-colors hover:bg-sky-600 focus:bg-sky-600 focus:shadow-[0_0_0_5px] focus:shadow-black focus:outline-none"
+                    aria-label="Volume"
+                  >
+                    <div className="relative -left-6 -top-8 font-mono">{timestampString}</div>
+                  </Slider.Thumb>
+                </Slider.Root>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
     </div>
