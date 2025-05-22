@@ -71,6 +71,7 @@ function App() {
   // State for playing
   const [isPlaying, setIsPlaying] = useState(false);
   const playIntervalRef = useRef<number | null>(null);
+  const pointerDownSuspendedPlay = useRef(false);
 
   // Aircraft rings
   const [rings, setRings] = useState<CheckedState>(false);
@@ -493,19 +494,19 @@ function App() {
           <div className="flex items-end rounded bg-white/90 p-5 shadow">
             <div className="flex">
               <StepBack
-                className="cursor-pointer hover:scale-110"
+                className="cursor-pointer hover:scale-105"
                 onClick={() => {
                   setIsPlaying(false);
                   decrementTimeSlider();
                 }}
               />
               {isPlaying ? (
-                <Pause className="cursor-pointer hover:scale-110" onClick={togglePlayback} />
+                <Pause className="cursor-pointer hover:scale-105" onClick={togglePlayback} />
               ) : (
-                <Play className="cursor-pointer hover:scale-110" onClick={togglePlayback} />
+                <Play className="cursor-pointer hover:scale-105" onClick={togglePlayback} />
               )}
               <StepForward
-                className="cursor-pointer hover:scale-110"
+                className="cursor-pointer hover:scale-105"
                 onClick={() => {
                   setIsPlaying(false);
                   incrementTimeSlider();
@@ -522,8 +523,18 @@ function App() {
                   step={1}
                   value={[sliderIndex]}
                   onValueChange={(v) => setSliderIndex(v[0])}
-                  onPointerDown={() => console.log("down")}
-                  onPointerUp={() => console.log("up")}
+                  onPointerDown={() => {
+                    if (isPlaying) {
+                      setIsPlaying(false);
+                      pointerDownSuspendedPlay.current = true;
+                    }
+                  }}
+                  onPointerUp={() => {
+                    if (pointerDownSuspendedPlay) {
+                      setIsPlaying(true);
+                      pointerDownSuspendedPlay.current = false;
+                    }
+                  }}
                 >
                   <Slider.Track className="relative h-[3px] grow rounded-full bg-neutral-300">
                     <Slider.Range className="absolute h-full rounded-full bg-slate-700" />
