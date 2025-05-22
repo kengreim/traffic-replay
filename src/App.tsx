@@ -10,7 +10,7 @@ import { Slider } from "radix-ui";
 import type { Feature } from "geojson";
 import type { FlightPlan } from "./types/vatsim-capture.ts";
 import { getAircraftIcon } from "./utils/icons.ts";
-import { Play, PlusIcon, StepBack, StepForward, X } from "lucide-react";
+import { Play, PlusIcon, StepBack, StepForward, X, Pause } from "lucide-react";
 import { StyledCheckbox } from "./components/ui-core/Checkbox.tsx";
 import type { CheckedState } from "./components/ui-core/Checkbox.tsx";
 
@@ -70,7 +70,7 @@ function App() {
 
   // State for playing
   const [isPlaying, setIsPlaying] = useState(false);
-  const playInterval = useRef(null);
+  const playIntervalRef = useRef<number | null>(null);
 
   // Aircraft rings
   const [rings, setRings] = useState<CheckedState>(false);
@@ -270,34 +270,51 @@ function App() {
   ];
 
   const incrementTimeSlider = () => {
-    let current = sliderIndex;
-    let next = Math.min(current + 1, timestamps.length - 1);
-    if (current === next) {
-      return false;
-    } else {
-      setSliderIndex(next);
-      return true;
-    }
+    setSliderIndex((current) => {
+      const next = Math.min(current + 1, timestamps.length - 1);
+      if (current === next) {
+        setIsPlaying(false);
+        return current;
+      }
+      return next;
+    });
+    return sliderIndex < timestamps.length - 1;
   };
 
   const decrementTimeSlider = () => {
-    let current = sliderIndex;
-    let next = Math.max(current - 1, 0);
-    if (current === next) {
-      return false;
-    } else {
-      setSliderIndex(next);
-      return true;
-    }
+    setSliderIndex((current) => {
+      const next = Math.max(current - 1, 0);
+      if (current === next) {
+        return current;
+      }
+      return next;
+    });
+    return sliderIndex > 0;
   };
-  //
-  // useEffect(() => {
-  //   if (isPlaying) {
-  //     playInterval = setInterval(() => {
-  //       incrementTimer()
-  //     })
-  //   }
-  // }, [isPlaying])
+
+  const togglePlayback = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  useEffect(() => {
+    if (isPlaying) {
+      playIntervalRef.current = window.setInterval(() => {
+        const hasMore = incrementTimeSlider();
+        if (!hasMore) {
+          setIsPlaying(false);
+        }
+      }, 1000);
+    } else if (playIntervalRef.current !== null) {
+      window.clearInterval(playIntervalRef.current);
+      playIntervalRef.current = null;
+    }
+
+    return () => {
+      if (playIntervalRef.current !== null) {
+        window.clearInterval(playIntervalRef.current);
+      }
+    };
+  }, [isPlaying]);
 
   return (
     <div className="flex min-h-dvh min-w-dvw font-manrope">
@@ -475,11 +492,25 @@ function App() {
         >
           <div className="bg-white/90 rounded shadow p-5 flex items-end">
             <div className="flex">
-              <StepBack className="hover:scale-110" onClick={() => decrementTimeSlider()} />
-              <Play onClick={() => {}} />
-              <StepForward
-                className="hover:scale-110"
+              <StepBack
+                className="hover:scale-110 cursor-pointer"
                 onClick={() => {
+                  setIsPlaying(false);
+                  decrementTimeSlider();
+                }}
+              />
+              {isPlaying ? (
+                <Pause className="hover:scale-110 cursor-pointer" onClick={togglePlayback} />
+              ) : (
+                <Play
+                  className="hover:scale-110 cursor-pointer"
+                  onClick={togglePlayback}
+                />
+              )}
+              <StepForward
+                className="hover:scale-110 cursor-pointer"
+                onClick={() => {
+                  setIsPlaying(false);
                   incrementTimeSlider();
                 }}
               />
