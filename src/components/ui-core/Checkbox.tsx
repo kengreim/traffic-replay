@@ -13,11 +13,11 @@ const StyledCheckbox = (props: CheckboxProps) => (
   <form>
     <div className="flex items-center">
       <Checkbox.Root
-        className="flex w-6 h-6 appearance-none items-center justify-center rounded border-neutral-600 border outline-none hover:bg-slate-700  focus:outline-1 focus:outline-white transition-colors"
+        className="flex h-6 w-6 appearance-none items-center justify-center rounded border border-neutral-600 outline-none transition-colors hover:bg-slate-700 focus:outline-1 focus:outline-white"
         checked={props.checked}
         onCheckedChange={props.onCheckedChange}
       >
-        <Checkbox.Indicator className="text-white bg-sky-600 rounded border-neutral-600 border">
+        <Checkbox.Indicator className="rounded border border-neutral-600 bg-sky-600 text-white">
           <CheckIcon />
         </Checkbox.Indicator>
       </Checkbox.Root>

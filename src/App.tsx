@@ -317,9 +317,9 @@ function App() {
   }, [isPlaying]);
 
   return (
-    <div className="flex min-h-dvh min-w-dvw font-manrope">
+    <div className="min-w-dvw font-manrope flex min-h-dvh">
       {/* Sidebar */}
-      <div className="bg-slate-900 p-6 overflow-y-auto overscroll-contain z-10 shadow-md text-white flex flex-col space-y-5">
+      <div className="z-10 flex flex-col space-y-5 overflow-y-auto overscroll-contain bg-slate-900 p-6 text-white shadow-md">
         <h1 className="text-2xl font-bold">Traffic Replay</h1>
 
         <div className="flex flex-col space-y-2">
@@ -327,7 +327,7 @@ function App() {
             <div className="mb-2">
               <h2 className="text-xl">Label Displays</h2>
             </div>
-            <div className="border rounded border-slate-600 p-2 flex flex-col space-y-2">
+            <div className="flex flex-col space-y-2 rounded border border-slate-600 p-2">
               <StyledCheckbox
                 label="Callsign"
                 checked={callsign}
@@ -357,14 +357,14 @@ function App() {
             <div className="mb-2">
               <h2 className="text-xl">Aircraft Rings</h2>
             </div>
-            <div className="border rounded border-slate-600 p-2 flex flex-col space-y-2">
+            <div className="flex flex-col space-y-2 rounded border border-slate-600 p-2">
               <StyledCheckbox
                 label="Show rings"
                 checked={rings}
                 onCheckedChange={(checked) => setRings(checked)}
               />
               {rings && (
-                <div className="flex space-x-3 items-center">
+                <div className="flex items-center space-x-3">
                   <input
                     type="number"
                     min={0}
@@ -373,7 +373,7 @@ function App() {
                     value={ringsDistance}
                     onChange={(e) => setRingsDistance(parseFloat(e.target.value))}
                     placeholder="3"
-                    className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+                    className="w-18 rounded-sm border border-neutral-600 p-1 font-mono uppercase focus:bg-slate-700 focus:outline-1 focus:outline-white"
                   />
                   <p>Radius (nm)</p>
                 </div>
@@ -387,7 +387,7 @@ function App() {
             <div className="mb-2">
               <h2 className="text-xl">Ground Filters</h2>
             </div>
-            <div className="border rounded border-slate-600 p-2 flex flex-col space-y-2">
+            <div className="flex flex-col space-y-2 rounded border border-slate-600 p-2">
               <StyledCheckbox
                 label="Hide aircraft < 30kts"
                 checked={hideSlowAircraft}
@@ -402,9 +402,9 @@ function App() {
             <div className="mb-2">
               <h2 className="text-xl">Route Filters</h2>
             </div>
-            <div className="border rounded border-slate-600 p-2">
+            <div className="rounded border border-slate-600 p-2">
               <form
-                className="flex space-x-4 items-end"
+                className="flex items-end space-x-4"
                 onSubmit={handleAddRouteFilter}
                 style={{ marginBottom: "10px" }}
               >
@@ -416,7 +416,7 @@ function App() {
                     onChange={(e) => setNewDepartureAirport(e.target.value)}
                     placeholder="ICAO"
                     maxLength={4}
-                    className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+                    className="w-18 rounded-sm border border-neutral-600 p-1 font-mono uppercase focus:bg-slate-700 focus:outline-1 focus:outline-white"
                   />
                 </div>
                 <div className="flex flex-col space-y-2">
@@ -427,27 +427,27 @@ function App() {
                     onChange={(e) => setNewArrivalAirport(e.target.value)}
                     placeholder="ICAO"
                     maxLength={4}
-                    className="p-1 font-mono w-18 uppercase border border-neutral-600 rounded-sm focus:bg-slate-700 focus:outline-1 focus:outline-white"
+                    className="w-18 rounded-sm border border-neutral-600 p-1 font-mono uppercase focus:bg-slate-700 focus:outline-1 focus:outline-white"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="p-1 rounded cursor-pointer bg-sky-600 hover:bg-sky-500 transition-colors w-8 h-8 flex items-center"
+                  className="flex h-8 w-8 cursor-pointer items-center rounded bg-sky-600 p-1 transition-colors hover:bg-sky-500"
                 >
                   <PlusIcon />
                 </button>
               </form>
-              <div className="italic text-sm text-neutral-300">
+              <div className="text-sm italic text-neutral-300">
                 Use * as a wildcard for any airport
               </div>
-              <div className="flex flex-col space-y-2 mt-4">
+              <div className="mt-4 flex flex-col space-y-2">
                 {routeFilters.map((route) => (
                   <div
                     key={`${route.departure}-${route.arrival}`}
-                    className="bg-sky-600 items-center rounded py-1 px-2 font-mono w-40 flex"
+                    className="flex w-40 items-center rounded bg-sky-600 px-2 py-1 font-mono"
                   >
-                    <p className="grow flex space-x-1">
+                    <p className="flex grow space-x-1">
                       <span className="w-9">{route.departure}</span>
                       <span>-</span>
                       <span className="w-9">{route.arrival}</span>
@@ -490,32 +490,29 @@ function App() {
           //   boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
           // }}
         >
-          <div className="bg-white/90 rounded shadow p-5 flex items-end">
+          <div className="flex items-end rounded bg-white/90 p-5 shadow">
             <div className="flex">
               <StepBack
-                className="hover:scale-110 cursor-pointer"
+                className="cursor-pointer hover:scale-110"
                 onClick={() => {
                   setIsPlaying(false);
                   decrementTimeSlider();
                 }}
               />
               {isPlaying ? (
-                <Pause className="hover:scale-110 cursor-pointer" onClick={togglePlayback} />
+                <Pause className="cursor-pointer hover:scale-110" onClick={togglePlayback} />
               ) : (
-                <Play
-                  className="hover:scale-110 cursor-pointer"
-                  onClick={togglePlayback}
-                />
+                <Play className="cursor-pointer hover:scale-110" onClick={togglePlayback} />
               )}
               <StepForward
-                className="hover:scale-110 cursor-pointer"
+                className="cursor-pointer hover:scale-110"
                 onClick={() => {
                   setIsPlaying(false);
                   incrementTimeSlider();
                 }}
               />
             </div>
-            <div className="grow ml-6">
+            <div className="ml-6 grow">
               <form className="px-4">
                 <Slider.Root
                   className="relative flex h-5 w-full touch-none select-none items-center pt-7"
@@ -532,10 +529,10 @@ function App() {
                     <Slider.Range className="absolute h-full rounded-full bg-slate-700" />
                   </Slider.Track>
                   <Slider.Thumb
-                    className="block size-5 rounded-[10px] bg-white shadow-[0_2px_10px] shadow-black hover:bg-sky-600 transition-colors focus:shadow-[0_0_0_5px] focus:shadow-black focus:outline-none focus:bg-sky-600"
+                    className="block size-5 rounded-[10px] bg-white shadow-[0_2px_10px] shadow-black transition-colors hover:bg-sky-600 focus:bg-sky-600 focus:shadow-[0_0_0_5px] focus:shadow-black focus:outline-none"
                     aria-label="Volume"
                   >
-                    <div className="relative -top-8 -left-6 font-mono">{timestampString}</div>
+                    <div className="relative -left-6 -top-8 font-mono">{timestampString}</div>
                   </Slider.Thumb>
                 </Slider.Root>
               </form>
