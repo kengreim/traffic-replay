@@ -70,6 +70,7 @@ function App() {
 
   // State for playing
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const playIntervalRef = useRef<number | null>(null);
   const pointerDownSuspendedPlay = useRef(false);
 
@@ -491,29 +492,51 @@ function App() {
           //   boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
           // }}
         >
-          <div className="flex items-end rounded bg-white/90 p-5 shadow">
-            <div className="flex">
-              <StepBack
-                className="cursor-pointer hover:scale-105"
-                onClick={() => {
-                  setIsPlaying(false);
-                  decrementTimeSlider();
-                }}
-              />
-              {isPlaying ? (
-                <Pause className="cursor-pointer hover:scale-105" onClick={togglePlayback} />
-              ) : (
-                <Play className="cursor-pointer hover:scale-105" onClick={togglePlayback} />
-              )}
-              <StepForward
-                className="cursor-pointer hover:scale-105"
-                onClick={() => {
-                  setIsPlaying(false);
-                  incrementTimeSlider();
-                }}
-              />
+          <div className="flex items-end rounded bg-neutral-50/90 px-5 py-2 shadow">
+            <div className="flex flex-col items-center">
+              <div className="flex">
+                <StepBack
+                  className="cursor-pointer hover:scale-105"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    decrementTimeSlider();
+                  }}
+                />
+                {isPlaying ? (
+                  <Pause className="cursor-pointer hover:scale-105" onClick={togglePlayback} />
+                ) : (
+                  <Play className="cursor-pointer hover:scale-105" onClick={togglePlayback} />
+                )}
+                <StepForward
+                  className="cursor-pointer hover:scale-105"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    incrementTimeSlider();
+                  }}
+                />
+              </div>
+              <div className="mt-2">
+                <select
+                  id="playback-speed"
+                  value={playbackSpeed}
+                  onChange={(e) => {
+                    setPlaybackSpeed(Number(e.target.value));
+                    if (isPlaying) {
+                      setIsPlaying(false);
+                      setTimeout(() => setIsPlaying(true), 0);
+                    }
+                  }}
+                  className="rounded border border-gray-300 px-2 py-1 text-sm"
+                >
+                  <option value={1}>1x</option>
+                  <option value={2}>2x</option>
+                  <option value={4}>4x</option>
+                  <option value={8}>8x</option>
+                  <option value={16}>16x</option>
+                </select>
+              </div>
             </div>
-            <div className="ml-6 grow">
+            <div className="mb-5 ml-6 grow">
               <form className="px-4">
                 <Slider.Root
                   className="relative flex h-5 w-full touch-none select-none items-center pt-7"
@@ -530,7 +553,7 @@ function App() {
                     }
                   }}
                   onPointerUp={() => {
-                    if (pointerDownSuspendedPlay) {
+                    if (pointerDownSuspendedPlay.current) {
                       setIsPlaying(true);
                       pointerDownSuspendedPlay.current = false;
                     }
