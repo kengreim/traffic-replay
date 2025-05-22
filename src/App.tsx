@@ -132,15 +132,10 @@ function App() {
     if (!currentData) return currentData;
 
     const filteredFeatures = currentData.features.filter((feature) => {
-      if (feature.properties?.data?.groundspeed) {
-        if (
-          hideSlowAircraft &&
-          (feature.properties.data.groundspeed === 0 || feature.properties.data.groundspeed < 30)
-        ) {
+      if (feature.properties?.data?.groundspeed !== undefined) {
+        if (hideSlowAircraft && feature.properties.data.groundspeed < 30) {
           return false;
         }
-      } else {
-        return false;
       }
 
       if (!feature.properties?.data?.flight_plan) {
