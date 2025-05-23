@@ -78,6 +78,7 @@ function App() {
   const [callsign, setCallsign] = useState<CheckedState>(true);
   const [speed, setSpeed] = useState<CheckedState>(false);
   const [altitude, setAltitude] = useState<CheckedState>(false);
+  const [departure, setDeparture] = useState<CheckedState>(false);
   const [destination, setDestination] = useState<CheckedState>(false);
 
   // Groundspeed filter
@@ -260,6 +261,9 @@ function App() {
         if (altitude) {
           lines.push(`${d.properties.data.altitude}ft`);
         }
+        if (departure && d.properties.data.flight_plan) {
+          lines.push(d.properties.data.flight_plan.departure);
+        }
         if (destination && d.properties.data.flight_plan) {
           lines.push(d.properties.data.flight_plan.arrival);
         }
@@ -273,7 +277,7 @@ function App() {
         const aircraftType = d.properties.data.flight_plan?.aircraft_short?.toLowerCase();
         return [0, Math.round(getAircraftIcon(aircraftType).width)];
       },
-      updateTriggers: { getText: [callsign, speed, altitude, destination] },
+      updateTriggers: { getText: [callsign, speed, altitude, destination, departure] },
     }),
     new GeoJsonLayer({
       id: "boundaries",
@@ -361,7 +365,12 @@ function App() {
                 onCheckedChange={(checked) => setAltitude(checked)}
               />
               <StyledCheckbox
-                label="Destination"
+                label="Departure Airport"
+                checked={departure}
+                onCheckedChange={(checked) => setDeparture(checked)}
+              />
+              <StyledCheckbox
+                label="Arrival Airport"
                 checked={destination}
                 onCheckedChange={(checked) => setDestination(checked)}
               />
