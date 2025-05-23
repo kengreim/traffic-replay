@@ -243,38 +243,6 @@ async fn main() -> Result<(), anyhow::Error> {
         error!(error = ?e, "failed to combine captures");
     }
 
-    // await datafeed processor and then combine everything at end
-
-    // create
-
-    // let artccs = load_artcc_polygons()?;
-    // // for (id, _) in artccs {
-    // //     println!("{id}");
-    // // }
-    //
-    // let x = artccs_bounding_rect(&artccs, &vec!["ZOA", "ZLA"])?;
-    // println!("{:?}", x);
-
-    // // Set up VATSIM Datafeed
-    // let api = Vatsim::new()
-    //     .await
-    //     .expect("Could not initialize VATSIM API");
-    //
-    // let (tx, mut rx) = mpsc::channel(32);
-    // let end_time = Utc::now() + Duration::from_secs(60 * 60 * 4);
-    //
-    // tokio::spawn(async move { datafeed_loop(api, tx, end_time).await });
-    //
-    // let bounding_coords = vec![
-    //     (-127.3917173, 42.7792754),
-    //     (-124.9738367, 30.9776091),
-    //     (-111.6961128, 32.1756125),
-    //     (-118.6424886, 43.1009829),
-    //     (-127.3917173, 42.7792754),
-    // ];
-    //
-    // let bounding_poly = Polygon::new(LineString::from(bounding_coords), vec![]);
-
     Ok(())
 }
 
