@@ -1,0 +1,5 @@
+name = "Test Event"
+artccs = ["ZOA", "ZLA"]
+airports = ["KSFO", "KSJC", "KOAK"]
+advertised_start_time = "2025-05-23T18:40:00Z"
+advertised_end_time = "2025-05-23T19:00:00Z"

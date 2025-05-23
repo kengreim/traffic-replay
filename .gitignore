@@ -1,5 +1,6 @@
 backend/src/captures
 backend/target
+backend/test-event
 /target
 .idea
 node_modules
