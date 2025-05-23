@@ -457,7 +457,7 @@ fn combine_captures(config: &EventConfig) -> Result<(), Error> {
         captures: all_snapshots,
     };
 
-    let output_file_string = format!("{captures_dir_string}/consolidated.json");
+    let output_file_string = format!("./{}/consolidated.json", slugify(&config.name));
     let mut file = File::create(&output_file_string)?;
     file.write_all(&serde_json::to_string(&capture)?.into_bytes())?;
 

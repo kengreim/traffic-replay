@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, type FormEvent, useRef } from "react";
 import DeckGL from "@deck.gl/react";
 import { GeoJsonLayer, IconLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { Map } from "react-map-gl/mapbox";
-import trafficDataDev from "./consolidated3.json";
+import trafficDataDev from "./consolidated.json";
 import artccs from "./artccs.json";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { FeatureCollection, Point } from "geojson";
@@ -17,6 +17,21 @@ import type { CheckedState } from "./components/ui-core/Checkbox.tsx";
 // Replace with your Mapbox access token
 const MAPBOX_ACCESS_TOKEN =
   "pk.eyJ1Ijoia2VuZ3JlaW0iLCJhIjoiY2x3aDBucGZ5MGI3bjJxc2EyNzNuODAyMyJ9.20EFStYOA8-EvOu4tsCkGg";
+
+interface EventCapture {
+  config: EventConfig;
+  first_timestamp_key: string;
+  last_timestamp_key: string;
+  captures: TrafficData;
+}
+
+interface EventConfig {
+  name: string;
+  artccs: string[];
+  airports: string[];
+  advertised_start_time: string;
+  advertised_end_time: string;
+}
 
 interface TrafficData {
   [key: string]: FeatureCollection;
@@ -109,10 +124,10 @@ function App() {
     };
 
     const loadDevData = async () => {
-      const data = trafficDataDev as TrafficData;
+      const event = trafficDataDev as EventCapture;
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      setTrafficData(data);
-      const timestamps = Object.keys(data).sort();
+      setTrafficData(event.captures);
+      const timestamps = Object.keys(event.captures).sort();
       setTimestamps(timestamps);
     };
 
