@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, type FormEvent, useRef } from "react";
 import DeckGL from "@deck.gl/react";
 import { GeoJsonLayer, IconLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { Map } from "react-map-gl/mapbox";
-import trafficDataDev from "./consolidated.json";
 import artccs from "./artccs.json";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { FeatureCollection, Point } from "geojson";
@@ -125,7 +124,7 @@ function App() {
     };
 
     const loadDevData = async () => {
-      const event = trafficDataDev as EventCapture;
+      const event = (await import("./consolidated.json")) as EventCapture;
       await new Promise((resolve) => setTimeout(resolve, 2000));
       setTrafficData(event.captures);
       const timestamps = Object.keys(event.captures).sort();

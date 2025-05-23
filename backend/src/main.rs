@@ -1,7 +1,7 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
 use anyhow::{Error, anyhow, bail};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Datelike, Timelike, Utc};
 use figment::Figment;
 use figment::providers::{Format, Toml};
 use geo::{BoundingRect, Distance, Haversine, MultiPolygon, Point, Polygon, Rect, unary_union};
@@ -229,13 +229,12 @@ async fn main() -> Result<(), anyhow::Error> {
         }
     };
 
-    let event_name = slugify(&event_config.name);
     let event_config_clone = event_config.clone();
 
     let (tx, rx) = mpsc::channel(32);
     tokio::spawn(async move { datafeed_loop(api, tx, &event_config_clone).await });
 
-    if let Err(e) = process_datafeeds(rx, &airports, &event_name).await {
+    if let Err(e) = process_datafeeds(rx, &airports, &event_slug(&event_config)).await {
         error!(error = ?e, "failed to process data feeds");
     }
 
@@ -335,12 +334,12 @@ async fn datafeed_loop(api: Vatsim, tx: Sender<V3ResponseData>, event_config: &E
 async fn process_datafeeds(
     mut rx: Receiver<V3ResponseData>,
     airports: &[&Airport],
-    event_name: &str,
+    event_slug: &str,
 ) -> Result<(), Error> {
     info!("Starting datafeed processor");
 
     // Create Directory for captures
-    let captures_dir_string = format!("./{event_name}/captures");
+    let captures_dir_string = format!("./{event_slug}/captures");
     fs::create_dir_all(&captures_dir_string)?;
 
     while let Some(datafeed) = rx.recv().await {
@@ -390,8 +389,9 @@ fn combine_captures(config: &EventConfig) -> Result<(), Error> {
     let mut all_snapshots = HashMap::new();
     let mut min_key = None;
     let mut max_key = None;
+    let event_slug = event_slug(&config);
 
-    let captures_dir_string = format!("./{}/captures", slugify(&config.name));
+    let captures_dir_string = format!("./{}/captures", &event_slug);
     for path in WalkDir::new(&captures_dir_string)
         .min_depth(1)
         .max_depth(1)
@@ -457,12 +457,22 @@ fn combine_captures(config: &EventConfig) -> Result<(), Error> {
         captures: all_snapshots,
     };
 
-    let output_file_string = format!("./{}/consolidated.json", slugify(&config.name));
+    let output_file_string = format!("./{}/consolidated.json", &event_slug);
     let mut file = File::create(&output_file_string)?;
     file.write_all(&serde_json::to_string(&capture)?.into_bytes())?;
 
     info!("Completed combining all datafeed captures");
     Ok(())
+}
+
+fn event_slug(event: &EventConfig) -> String {
+    format!(
+        "{}-{:02}-{:02}-{}",
+        event.advertised_start_time.year(),
+        event.advertised_start_time.month(),
+        event.advertised_start_time.day(),
+        slugify(&event.name)
+    )
 }
 
 fn load_artcc_polygons() -> Result<HashMap<String, Polygon>, geojson::Error> {
