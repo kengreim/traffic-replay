@@ -124,7 +124,7 @@ function App() {
     };
 
     const loadDevData = async () => {
-      const event = (await import("./consolidated.json")) as EventCapture;
+      const event = (await import("./test-data/consolidated.json")) as EventCapture;
       await new Promise((resolve) => setTimeout(resolve, 2000));
       setTrafficData(event.captures);
       const timestamps = Object.keys(event.captures).sort();

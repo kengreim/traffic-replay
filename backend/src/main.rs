@@ -1,7 +1,7 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
 use anyhow::{Error, anyhow, bail};
-use chrono::{DateTime, Datelike, Timelike, Utc};
+use chrono::{DateTime, Datelike, Utc};
 use figment::Figment;
 use figment::providers::{Format, Toml};
 use geo::{BoundingRect, Distance, Haversine, MultiPolygon, Point, Polygon, Rect, unary_union};
@@ -18,7 +18,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::time::sleep;
-use tracing::{Level, debug, error, info, span, warn};
+use tracing::{Level, debug, error, info, instrument, span, warn};
 use tracing_subscriber::fmt::format::FmtSpan;
 use vatsim_utils::live_api::Vatsim;
 use vatsim_utils::models::{Pilot, V3ResponseData};
@@ -144,6 +144,8 @@ impl From<AirportRecord> for Airport {
 }
 
 type IcaoId = String;
+
+#[instrument]
 fn load_airports() -> Result<HashMap<IcaoId, Airport>, anyhow::Error> {
     debug!("loading airports from file");
     let mut airports = HashMap::new();
@@ -224,7 +226,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let api = match Vatsim::new().await {
         Ok(api) => api,
         Err(e) => {
-            error!(error = ?e, "failed to initialized VATSIM API");
+            error!(error = ?e, "failed to initialize VATSIM API");
             return Err(e.into());
         }
     };
