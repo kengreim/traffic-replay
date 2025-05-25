@@ -27,7 +27,7 @@ use walkdir::WalkDir;
 const NM_TO_METERS: f64 = 1852.0;
 const EVENT_PRE_TIME_MINUTES: u64 = 5;
 const EVENT_POST_TIME_MINUTES: u64 = 5;
-const CAPTURE_RANGE_NM: u16 = 800;
+const CAPTURE_RANGE_NM: u16 = 600;
 
 #[derive(Deserialize, Serialize)]
 pub struct PilotData {
@@ -128,6 +128,7 @@ struct AirportRecord {
 
 #[derive(Debug)]
 struct Airport {
+    #[allow(dead_code)]
     faa_id: String,
     icao_id: String,
     point: Point,
@@ -391,7 +392,7 @@ fn combine_captures(config: &EventConfig) -> Result<(), Error> {
     let mut all_snapshots = HashMap::new();
     let mut min_key = None;
     let mut max_key = None;
-    let event_slug = event_slug(&config);
+    let event_slug = event_slug(config);
 
     let captures_dir_string = format!("./{}/captures", &event_slug);
     for path in WalkDir::new(&captures_dir_string)
@@ -477,6 +478,7 @@ fn event_slug(event: &EventConfig) -> String {
     )
 }
 
+#[allow(dead_code)]
 fn load_artcc_polygons() -> Result<HashMap<String, Polygon>, geojson::Error> {
     let geojson_str = fs::read_to_string("./src/artccs.json").expect("Could not read artccs.json");
     let geojson = geojson_str
@@ -502,6 +504,7 @@ fn load_artcc_polygons() -> Result<HashMap<String, Polygon>, geojson::Error> {
     Ok(boundaries)
 }
 
+#[allow(dead_code)]
 fn combine_artccs(
     boundaries: &HashMap<String, Polygon<f64>>,
     artccs: &[&str],
@@ -516,6 +519,7 @@ fn combine_artccs(
     Ok(unary_union(&polygons))
 }
 
+#[allow(dead_code)]
 fn artccs_bounding_rect(
     boundaries: &HashMap<String, Polygon<f64>>,
     artccs: &[&str],
