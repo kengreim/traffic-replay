@@ -1,5 +1,6 @@
 backend/src/captures
 backend/target
+backend/test-event
 backend/2025*
 /target
 .idea

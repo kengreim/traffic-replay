@@ -7,7 +7,7 @@ edition = "2024"
 tokio = { version = "1.45.0", features = ["rt", "rt-multi-thread", "macros", "time"] }
 chrono = { version = "0.4.41", features = ["serde"] }
 tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["json"] }
+tracing-subscriber = { version = "0.3.19", features = ["json", "env-filter"] }
 vatsim_utils = "0.5.4"
 geo = "0.30.0"
 serde_json = "1.0.140"
@@ -15,3 +15,6 @@ walkdir = "2.5.0"
 serde = { version = "1.0.219", features = ["derive"] }
 geojson = "0.24.2"
 anyhow = "1.0.98"
+figment = { version = "0.10.19", features = ["toml"] }
+csv = "1.3.1"
+slug = "0.1.6"

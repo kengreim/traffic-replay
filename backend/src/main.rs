@@ -1,24 +1,33 @@
-use anyhow::{anyhow, bail};
-use chrono::{DateTime, Utc};
-use geo::{BoundingRect, Contains, LineString, MultiPolygon, Polygon, Rect, point, unary_union};
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+
+use anyhow::{Error, anyhow, bail};
+use chrono::{DateTime, Datelike, Utc};
+use figment::Figment;
+use figment::providers::{Format, Toml};
+use geo::{BoundingRect, Distance, Haversine, MultiPolygon, Point, Polygon, Rect, unary_union};
 use geojson::feature::Id;
 use geojson::{Feature, FeatureCollection, GeoJson, JsonObject, Value};
 use serde::{Deserialize, Serialize};
+use slug::slugify;
 use std::cmp::min;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
-use std::io::{Read, Write};
-use std::path::Path;
+use std::io::Write;
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::time::sleep;
-use tracing::dispatcher::SetGlobalDefaultError;
-use tracing::{debug, error, info, warn};
+use tracing::{Level, debug, error, info, instrument, span, warn};
+use tracing_subscriber::fmt::format::FmtSpan;
 use vatsim_utils::live_api::Vatsim;
-use vatsim_utils::models::V3ResponseData;
+use vatsim_utils::models::{Pilot, V3ResponseData};
 use walkdir::WalkDir;
+
+const NM_TO_METERS: f64 = 1852.0;
+const EVENT_PRE_TIME_MINUTES: u64 = 5;
+const EVENT_POST_TIME_MINUTES: u64 = 5;
+const CAPTURE_RANGE_NM: u16 = 600;
 
 #[derive(Deserialize, Serialize)]
 pub struct PilotData {
@@ -50,8 +59,8 @@ pub struct FlightPlan {
     pub revision_id: i64,
 }
 
-impl From<vatsim_utils::models::Pilot> for PilotData {
-    fn from(value: vatsim_utils::models::Pilot) -> Self {
+impl From<Pilot> for PilotData {
+    fn from(value: Pilot) -> Self {
         Self {
             cid: value.cid,
             name: value.name,
@@ -62,7 +71,7 @@ impl From<vatsim_utils::models::Pilot> for PilotData {
             groundspeed: value.groundspeed,
             transponder: value.transponder,
             heading: value.heading,
-            flight_plan: value.flight_plan.map(|f| f.into()),
+            flight_plan: value.flight_plan.map(Into::into),
             logon_time: value.logon_time,
             last_updated: value.last_updated,
         }
@@ -90,17 +99,88 @@ impl From<vatsim_utils::models::FlightPlan> for FlightPlan {
 struct EventConfig {
     pub name: String,
     pub artccs: Vec<String>,
-    pub fields: Vec<String>,
+    pub airports: Vec<String>,
     pub advertised_start_time: DateTime<Utc>,
     pub advertised_end_time: DateTime<Utc>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
 struct EventCapture {
     pub config: EventConfig,
-    pub first_timestamp_key: String,
-    pub last_timestamp_key: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub first_timestamp_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_timestamp_key: Option<String>,
     pub captures: HashMap<String, FeatureCollection>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct AirportRecord {
+    #[serde(rename = "ARPT_ID")]
+    faa_id: String,
+    #[serde(rename = "ICAO_ID")]
+    icao_id: String,
+    #[serde(rename = "LAT_DECIMAL")]
+    latitude: f64,
+    #[serde(rename = "LONG_DECIMAL")]
+    longitude: f64,
+}
+
+#[derive(Debug)]
+struct Airport {
+    #[allow(dead_code)]
+    faa_id: String,
+    icao_id: String,
+    point: Point,
+}
+
+impl From<AirportRecord> for Airport {
+    fn from(record: AirportRecord) -> Self {
+        Self {
+            faa_id: record.faa_id,
+            icao_id: record.icao_id,
+            point: Point::new(record.longitude, record.latitude),
+        }
+    }
+}
+
+type IcaoId = String;
+
+#[instrument]
+fn load_airports() -> Result<HashMap<IcaoId, Airport>, anyhow::Error> {
+    debug!("loading airports from file");
+    let mut airports = HashMap::new();
+
+    let csv_file = File::open("./APT_BASE.csv")?;
+    let mut csv_reader = csv::Reader::from_reader(csv_file);
+    for record in csv_reader.deserialize() {
+        let record: AirportRecord = record?;
+        if !record.icao_id.is_empty() {
+            airports.insert(record.icao_id.clone(), Airport::from(record));
+        }
+    }
+
+    debug!("completed loading data for {} airports", airports.len());
+    Ok(airports)
+}
+
+fn filter_pilots_by_distance_and_field(
+    mut pilots: Vec<Pilot>,
+    icao_airports: &[&Airport],
+    distance_nm: u16,
+) -> Vec<Pilot> {
+    pilots.retain(|p| {
+        p.flight_plan.as_ref().is_some_and(|fp| {
+            icao_airports
+                .iter()
+                .any(|apt| apt.icao_id == fp.departure || apt.icao_id == fp.arrival)
+        }) || icao_airports.iter().any(|apt| {
+            Haversine.distance(apt.point, Point::new(p.longitude, p.latitude))
+                < (f64::from(distance_nm) * NM_TO_METERS)
+        })
+    });
+
+    pilots
 }
 
 #[tokio::main]
@@ -108,46 +188,93 @@ async fn main() -> Result<(), anyhow::Error> {
     let subscriber = tracing_subscriber::fmt()
         .compact()
         .json()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_env_filter("traffic_replay=debug")
+        .with_span_events(FmtSpan::CLOSE)
         .with_file(true)
         .with_line_number(true)
         .finish();
 
     tracing::subscriber::set_global_default(subscriber)?;
 
-    let artccs = load_artcc_polygons()?;
-    // for (id, _) in artccs {
-    //     println!("{id}");
-    // }
+    let all_airports = match load_airports() {
+        Ok(airports) => airports,
+        Err(e) => {
+            error!(error = ?e, "failed to load airports CSV");
+            return Err(e);
+        }
+    };
 
-    let x = artccs_bounding_rect(&artccs, &vec!["ZOA", "ZLA"])?;
-    println!("{:?}", x);
+    let event_config: EventConfig = match Figment::new().merge(Toml::file("config.toml")).extract()
+    {
+        Ok(config) => config,
+        Err(e) => {
+            error!(error = ?e, "failed to load config file");
+            return Err(e.into());
+        }
+    };
 
-    // // Set up VATSIM Datafeed
-    // let api = Vatsim::new()
-    //     .await
-    //     .expect("Could not initialize VATSIM API");
-    //
-    // let (tx, mut rx) = mpsc::channel(32);
-    // let end_time = Utc::now() + Duration::from_secs(60 * 60 * 4);
-    //
-    // tokio::spawn(async move { datafeed_loop(api, tx, end_time).await });
-    //
-    // let bounding_coords = vec![
-    //     (-127.3917173, 42.7792754),
-    //     (-124.9738367, 30.9776091),
-    //     (-111.6961128, 32.1756125),
-    //     (-118.6424886, 43.1009829),
-    //     (-127.3917173, 42.7792754),
-    // ];
-    //
-    // let bounding_poly = Polygon::new(LineString::from(bounding_coords), vec![]);
+    let mut airports = vec![];
+    for icao_id in &event_config.airports {
+        if let Some(airport) = all_airports.get(icao_id) {
+            airports.push(airport);
+        } else {
+            error!(id = ?icao_id, "invalid airport ICAO id, not found in FAA data");
+            bail!("invalid airport ICAO id {icao_id}, not found in FAA data");
+        }
+    }
+
+    let api = match Vatsim::new().await {
+        Ok(api) => api,
+        Err(e) => {
+            error!(error = ?e, "failed to initialize VATSIM API");
+            return Err(e.into());
+        }
+    };
+
+    let event_config_clone = event_config.clone();
+
+    let (tx, rx) = mpsc::channel(32);
+    tokio::spawn(async move { datafeed_loop(api, tx, &event_config_clone).await });
+
+    if let Err(e) = process_datafeeds(rx, &airports, &event_slug(&event_config)).await {
+        error!(error = ?e, "failed to process data feeds");
+    }
+
+    if let Err(e) = combine_captures(&event_config) {
+        error!(error = ?e, "failed to combine captures");
+    }
 
     Ok(())
 }
 
-async fn datafeed_loop(api: Vatsim, tx: Sender<V3ResponseData>, end_time: DateTime<Utc>) {
+async fn datafeed_loop(api: Vatsim, tx: Sender<V3ResponseData>, event_config: &EventConfig) {
+    let loop_start_time =
+        event_config.advertised_start_time - Duration::from_secs(60 * EVENT_PRE_TIME_MINUTES);
+    let loop_end_time =
+        event_config.advertised_end_time + Duration::from_secs(60 * EVENT_POST_TIME_MINUTES);
+    let initial_sleep = if Utc::now() > loop_start_time {
+        None
+    } else {
+        Some(loop_start_time - Utc::now())
+    };
+
     let mut last_datafeed_update = String::new();
 
+    if let Some(duration) = initial_sleep {
+        match duration.to_std() {
+            Ok(duration) => {
+                info!(duration = ?duration, "Sleeping until captures start");
+                tokio::time::sleep(duration).await;
+            }
+            Err(e) => {
+                error!(error = ?e, "failed to convert TimeDelta to Duration required for intial sleep");
+                return;
+            }
+        }
+    }
+
+    info!("Starting datafeed loop");
     loop {
         let start = Instant::now();
 
@@ -157,7 +284,7 @@ async fn datafeed_loop(api: Vatsim, tx: Sender<V3ResponseData>, end_time: DateTi
             warn!(error = ?e, "Could not fetch VATSIM data");
             sleep(Duration::from_secs(1)).await;
             continue;
-        };
+        }
 
         // Unwrap and check if duplicate from last fetch
         // Safe to unwrap because checked Err case above already
@@ -170,7 +297,7 @@ async fn datafeed_loop(api: Vatsim, tx: Sender<V3ResponseData>, end_time: DateTi
         }
 
         // Update timestamp of latest data and process datafeed
-        last_datafeed_update = latest_data.general.update.clone();
+        last_datafeed_update.clone_from(&latest_data.general.update);
 
         let update_timestamp = if let Ok(update_timestamp) =
             DateTime::parse_from_rfc3339(&latest_data.general.update_timestamp)
@@ -184,20 +311,20 @@ async fn datafeed_loop(api: Vatsim, tx: Sender<V3ResponseData>, end_time: DateTi
             continue;
         };
 
-        if update_timestamp > end_time {
+        if update_timestamp > loop_end_time {
             info!("Ending datafeed collection");
             return;
         }
 
         if let Err(e) = tx.send(latest_data).await {
-            println!("Error sending datafeed: {}", e);
             error!(error = ?e, "Error sending datafeed through mpsc. Ending datafeed loop");
             return;
         }
+        info!(time = %update_timestamp, "Found new datafeed");
 
         // Sleep for 5 seconds minus the time this loop took, with some protections to make sure we
         // don't have a negative duration
-        let loop_time = Instant::now() - start;
+        let loop_time = start.elapsed();
         if loop_time > Duration::from_secs(4) {
             warn!(?loop_time, "Long loop");
         }
@@ -207,85 +334,151 @@ async fn datafeed_loop(api: Vatsim, tx: Sender<V3ResponseData>, end_time: DateTi
     }
 }
 
-async fn process_datafeeds(rx: Receiver<V3ResponseData>) -> Result<(), anyhow::Error> {
-    println!("Starting datafeed processor");
-    // while let Some(mut datafeed) = rx.recv().await {
-    //     let captured_pilots = datafeed
-    //         .pilots
-    //         .retain(|p| bounding_poly.contains(&point! { x: p.longitude, y: p.latitude }));
-    //
-    //     let filename = format!("./src/captures/{}.json", datafeed.general.update);
-    //     let mut file = File::create(&filename).expect("Could not create file");
-    //     if let Err(e) = file.write_all(
-    //         &serde_json::to_string(&captured_pilots)
-    //             .expect("could not serialize")
-    //             .into_bytes(),
-    //     ) {
-    //         warn!("Could not write to file: {}", e);
-    //     }
-    //
-    //     println!("{:?}", datafeed.general.update);
-    // }
+async fn process_datafeeds(
+    mut rx: Receiver<V3ResponseData>,
+    airports: &[&Airport],
+    event_slug: &str,
+) -> Result<(), Error> {
+    info!("Starting datafeed processor");
+
+    // Create Directory for captures
+    let captures_dir_string = format!("./{event_slug}/captures");
+    fs::create_dir_all(&captures_dir_string)?;
+
+    while let Some(datafeed) = rx.recv().await {
+        let span = span!(
+            Level::DEBUG,
+            "process datafeed",
+            update = datafeed.general.update
+        );
+        let _enter = span.enter();
+
+        let captured_pilots =
+            filter_pilots_by_distance_and_field(datafeed.pilots, airports, CAPTURE_RANGE_NM);
+
+        let filename = format!("{captures_dir_string}/{}.json", datafeed.general.update);
+
+        let mut file = match File::create(&filename) {
+            Ok(file) => file,
+            Err(e) => {
+                warn!(error = ?e, update = datafeed.general.update, "Could not create file for capture");
+                continue;
+            }
+        };
+
+        let json_string = match serde_json::to_string(&captured_pilots) {
+            Ok(json_string) => json_string,
+            Err(e) => {
+                warn!(error = ?e, update = datafeed.general.update, "Could not serialize json for capture");
+                continue;
+            }
+        };
+
+        if let Err(e) = file.write_all(&json_string.into_bytes()) {
+            warn!("Could not write to file: {}", e);
+        }
+
+        debug!(
+            timestamp = datafeed.general.update,
+            "Finished processing datafeed"
+        );
+    }
 
     Ok(())
 }
 
-fn combine_captures() {
+#[tracing::instrument]
+fn combine_captures(config: &EventConfig) -> Result<(), Error> {
     let mut all_snapshots = HashMap::new();
+    let mut min_key = None;
+    let mut max_key = None;
+    let event_slug = event_slug(config);
 
-    for path in WalkDir::new("./src/captures")
+    let captures_dir_string = format!("./{}/captures", &event_slug);
+    for path in WalkDir::new(&captures_dir_string)
         .min_depth(1)
         .max_depth(1)
         .into_iter()
-        .filter_map(|e| e.ok())
+        .filter_map(Result::ok)
         .filter(|e| e.file_type().is_file())
-        .map(|e| e.into_path())
+        .map(walkdir::DirEntry::into_path)
     {
-        if let Ok(file) = File::open(&path) {
-            let pilots: Vec<vatsim_utils::models::Pilot> = serde_json::from_reader(file).unwrap();
-            let update = path.file_stem().unwrap().to_str().unwrap();
+        let file = File::open(&path)?;
+        let pilots: Vec<Pilot> = serde_json::from_reader(file)?;
+        let update = path
+            .file_stem()
+            .ok_or_else(|| anyhow!("could not extract file stem for {path:?}"))?
+            .to_str()
+            .ok_or_else(|| anyhow!("could not convert OsStr to Str for {path:?}"))?;
 
-            let features = pilots.into_iter().map(|pilot| {
-                let geometry = Some(Value::Point(vec![pilot.longitude, pilot.latitude]).into());
-                let id = Some(Id::Number(pilot.cid.into()));
-
-                let mut properties = JsonObject::new();
-                properties.insert(
-                    "data".to_string(),
-                    serde_json::to_value(PilotData::from(pilot))
-                        .expect("could not serialize Pilot")
-                        .into(),
-                );
-
-                Feature {
-                    bbox: None,
-                    geometry,
-                    id,
-                    properties: Some(properties),
-                    foreign_members: None,
-                }
-            });
-
-            let collection = FeatureCollection {
-                bbox: None,
-                features: features.collect::<Vec<_>>(),
-                foreign_members: None,
-            };
-
-            all_snapshots.insert(update.to_string(), collection);
+        if min_key
+            .as_ref()
+            .is_none_or(|min: &String| update < min.as_str())
+        {
+            min_key = Some(update.to_owned());
         }
+
+        if max_key
+            .as_ref()
+            .is_none_or(|max: &String| update > max.as_str())
+        {
+            max_key = Some(update.to_owned());
+        }
+
+        let features = pilots.into_iter().map(|pilot| {
+            let geometry = Some(Value::Point(vec![pilot.longitude, pilot.latitude]).into());
+            let id = Some(Id::Number(pilot.cid.into()));
+
+            let mut properties = JsonObject::new();
+            properties.insert(
+                "data".to_owned(),
+                serde_json::to_value(PilotData::from(pilot)).expect("could not serialize Pilot"),
+            );
+
+            Feature {
+                bbox: None,
+                geometry,
+                id,
+                properties: Some(properties),
+                foreign_members: None,
+            }
+        });
+
+        let collection = FeatureCollection {
+            bbox: None,
+            features: features.collect::<Vec<_>>(),
+            foreign_members: None,
+        };
+
+        all_snapshots.insert(update.to_owned(), collection);
     }
 
-    let mut file = File::create("./src/consolidated3.json").expect("Could not create file");
-    if let Err(e) = file.write_all(
-        &serde_json::to_string(&all_snapshots)
-            .expect("could not serialize")
-            .into_bytes(),
-    ) {
-        warn!("Could not write to file: {}", e);
-    }
+    let capture = EventCapture {
+        config: config.clone(),
+        first_timestamp_key: min_key,
+        last_timestamp_key: max_key,
+        captures: all_snapshots,
+    };
+
+    let output_file_string = format!("./{}/consolidated.json", &event_slug);
+    let mut file = File::create(&output_file_string)?;
+    file.write_all(&serde_json::to_string(&capture)?.into_bytes())?;
+
+    info!("Completed combining all datafeed captures");
+    Ok(())
 }
 
+fn event_slug(event: &EventConfig) -> String {
+    format!(
+        "{}-{:02}-{:02}-{}",
+        event.advertised_start_time.year(),
+        event.advertised_start_time.month(),
+        event.advertised_start_time.day(),
+        slugify(&event.name)
+    )
+}
+
+#[allow(dead_code)]
 fn load_artcc_polygons() -> Result<HashMap<String, Polygon>, geojson::Error> {
     let geojson_str = fs::read_to_string("./src/artccs.json").expect("Could not read artccs.json");
     let geojson = geojson_str
@@ -303,7 +496,7 @@ fn load_artcc_polygons() -> Result<HashMap<String, Polygon>, geojson::Error> {
             .expect("Missing id")
             .as_str()
             .expect("Unable to parse id to &str")
-            .to_string();
+            .to_owned();
         let poly = Polygon::<f64>::try_from(feature)?;
         boundaries.insert(id, poly);
     }
@@ -311,13 +504,14 @@ fn load_artcc_polygons() -> Result<HashMap<String, Polygon>, geojson::Error> {
     Ok(boundaries)
 }
 
+#[allow(dead_code)]
 fn combine_artccs(
     boundaries: &HashMap<String, Polygon<f64>>,
     artccs: &[&str],
 ) -> Result<MultiPolygon<f64>, anyhow::Error> {
     let mut polygons = vec![];
     for artcc in artccs {
-        let Some(poly) = boundaries.get(&artcc.to_string()) else {
+        let Some(poly) = boundaries.get(&(*artcc).to_owned()) else {
             bail!("invalid ARTCC id: {artcc}")
         };
         polygons.push(poly.clone());
@@ -325,6 +519,7 @@ fn combine_artccs(
     Ok(unary_union(&polygons))
 }
 
+#[allow(dead_code)]
 fn artccs_bounding_rect(
     boundaries: &HashMap<String, Polygon<f64>>,
     artccs: &[&str],
@@ -332,5 +527,5 @@ fn artccs_bounding_rect(
     let combined_poly = combine_artccs(boundaries, artccs)?;
     combined_poly
         .bounding_rect()
-        .ok_or(anyhow!("no bounding rectangle"))
+        .ok_or_else(|| anyhow!("no bounding rectangle"))
 }
