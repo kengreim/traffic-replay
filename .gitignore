@@ -1,5 +1,6 @@
 backend/src/captures
 backend/target
+backend/2025*
 /target
 .idea
 node_modules

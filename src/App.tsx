@@ -96,7 +96,7 @@ function App() {
     // get data
     const fetchData = async () => {
       const response = await fetch(
-        "https://pub-22f92118e0b54022a686301adc9b496e.r2.dev/consolidated3.json",
+        "https://data.vatsim-replay.com/2025-05-24-cowboys-spaceships-and-star-spangled-banners.json",
       );
       if (response.ok) {
         const data = (await response.json()) as TrafficData;
