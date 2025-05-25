@@ -56,9 +56,9 @@ interface PilotData {
 
 function App() {
   const [viewport] = useState({
-    longitude: -122.4,
-    latitude: 37.8,
-    zoom: 11,
+    longitude: -95.3416,
+    latitude: 29.9931,
+    zoom: 7,
     pitch: 0,
     bearing: 0,
   });
@@ -114,11 +114,11 @@ function App() {
         "https://data.vatsim-replay.com/2025-05-24-cowboys-spaceships-and-star-spangled-banners.json",
       );
       if (response.ok) {
-        const data = (await response.json()) as TrafficData;
-        setTrafficData(data);
+        const data = (await response.json()) as EventCapture;
+        setTrafficData(data.captures);
 
         // Extract timestamps from the data
-        const timestamps = Object.keys(data).sort();
+        const timestamps = Object.keys(data.captures).sort();
         setTimestamps(timestamps);
       }
     };
