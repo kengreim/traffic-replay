@@ -12,16 +12,28 @@ import { getAircraftIcon } from "./utils/icons.ts";
 import { Play, PlusIcon, StepBack, StepForward, X, Pause } from "lucide-react";
 import { StyledCheckbox } from "./components/ui-core/Checkbox.tsx";
 import type { CheckedState } from "./components/ui-core/Checkbox.tsx";
+import { type MapViewState, FlyToInterpolator } from "@deck.gl/core";
 
 // Replace with your Mapbox access token
 const MAPBOX_ACCESS_TOKEN =
   "pk.eyJ1Ijoia2VuZ3JlaW0iLCJhIjoiY2x3aDBucGZ5MGI3bjJxc2EyNzNuODAyMyJ9.20EFStYOA8-EvOu4tsCkGg";
+
+const DEFAULT_ZOOM = 7;
+const DEFAULT_VIEWPORT = {
+  longitude: -98.583333,
+  latitude: 39.833333,
+  pitch: 0,
+  bearing: 0,
+  zoom: 4,
+};
 
 interface EventCapture {
   config: EventConfig;
   first_timestamp_key: string;
   last_timestamp_key: string;
   captures: TrafficData;
+  captures_length_bytes: number;
+  viewport_center: { x: number; y: number };
 }
 
 interface EventConfig {
@@ -55,13 +67,7 @@ interface PilotData {
 }
 
 function App() {
-  const [viewport] = useState({
-    longitude: -122.4,
-    latitude: 37.8,
-    zoom: 11,
-    pitch: 0,
-    bearing: 0,
-  });
+  const [viewport, setViewport] = useState<MapViewState>(DEFAULT_VIEWPORT);
 
   const [trafficData, setTrafficData] = useState<TrafficData>({});
 
@@ -114,21 +120,46 @@ function App() {
         "https://data.vatsim-replay.com/2025-05-24-cowboys-spaceships-and-star-spangled-banners.json",
       );
       if (response.ok) {
-        const data = (await response.json()) as TrafficData;
-        setTrafficData(data);
+        const event = (await response.json()) as EventCapture;
+        setTrafficData(event.captures);
 
         // Extract timestamps from the data
-        const timestamps = Object.keys(data).sort();
+        const timestamps = Object.keys(event.captures).sort();
         setTimestamps(timestamps);
+
+        setViewport({
+          longitude: event.viewport_center.x,
+          latitude: event.viewport_center.y,
+          pitch: 0,
+          bearing: 0,
+          zoom: 7,
+          transitionInterpolator: new FlyToInterpolator({ speed: 2 }),
+          transitionDuration: "auto",
+        });
       }
     };
 
     const loadDevData = async () => {
-      const event = (await import("./test-data/consolidated.json")) as EventCapture;
+      // @ts-ignore
+      const event = (await import(
+        "./test-data/2025-05-24-cowboys-spaceships-and-star-spangled-banners.json"
+      )) as EventCapture;
       await new Promise((resolve) => setTimeout(resolve, 2000));
       setTrafficData(event.captures);
       const timestamps = Object.keys(event.captures).sort();
       setTimestamps(timestamps);
+      console.log(event.captures_length_bytes);
+      console.log(event.viewport_center);
+
+      setViewport({
+        longitude: event.viewport_center.x,
+        latitude: event.viewport_center.y,
+        pitch: 0,
+        bearing: 0,
+        zoom: 7,
+        transitionInterpolator: new FlyToInterpolator({ speed: 2 }),
+        transitionDuration: "auto",
+      });
     };
 
     if (import.meta.env.PROD) {

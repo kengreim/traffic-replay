@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@deck.gl/core':
+        specifier: ^9.1.12
+        version: 9.1.12
       '@deck.gl/layers':
         specifier: ^9.1.12
         version: 9.1.12(@deck.gl/core@9.1.12)(@loaders.gl/core@4.3.3)(@luma.gl/core@9.1.9)(@luma.gl/engine@9.1.9(@luma.gl/core@9.1.9)(@luma.gl/shadertools@9.1.9(@luma.gl/core@9.1.9)))
