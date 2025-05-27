@@ -18,6 +18,8 @@ import { type MapViewState, FlyToInterpolator } from "@deck.gl/core";
 const MAPBOX_ACCESS_TOKEN =
   "pk.eyJ1Ijoia2VuZ3JlaW0iLCJhIjoiY2x3aDBucGZ5MGI3bjJxc2EyNzNuODAyMyJ9.20EFStYOA8-EvOu4tsCkGg";
 
+const EVENTS_METADATA_URL = "https://data.vatsim-replay.com/events.json";
+
 const DEFAULT_ZOOM = 7;
 const DEFAULT_VIEWPORT = {
   longitude: -98.583333,
@@ -43,6 +45,8 @@ interface EventConfig {
   advertised_start_time: string;
   advertised_end_time: string;
 }
+
+type EventsMetadata = { event: EventConfig; url: string }[];
 
 interface TrafficData {
   [key: string]: FeatureCollection;
@@ -132,7 +136,7 @@ function App() {
           latitude: event.viewport_center.y,
           pitch: 0,
           bearing: 0,
-          zoom: 7,
+          zoom: DEFAULT_ZOOM,
           transitionInterpolator: new FlyToInterpolator({ speed: 2 }),
           transitionDuration: "auto",
         });
@@ -156,7 +160,7 @@ function App() {
         latitude: event.viewport_center.y,
         pitch: 0,
         bearing: 0,
-        zoom: 7,
+        zoom: DEFAULT_ZOOM,
         transitionInterpolator: new FlyToInterpolator({ speed: 2 }),
         transitionDuration: "auto",
       });
@@ -255,7 +259,7 @@ function App() {
       sizeMaxPixels: 150,
     }),
     new ScatterplotLayer({
-      id: "aircraft-dot-layer",
+      id: "ring-layer",
       data: filteredData?.features ?? [],
       pickable: false,
       getPosition: (d: Feature<Point, PilotProperties>) => [
@@ -273,7 +277,7 @@ function App() {
       updateTriggers: { getRadius: [ringsDistance] },
     }),
     new TextLayer({
-      id: "heading-layer",
+      id: "label-layer",
       data: filteredData?.features ?? [],
       pickable: false,
       getPosition: (d: Feature<Point, PilotProperties>) => [
@@ -310,7 +314,7 @@ function App() {
       updateTriggers: { getText: [callsign, speed, altitude, destination, departure] },
     }),
     new GeoJsonLayer({
-      id: "boundaries",
+      id: "boundaries-layer",
       data: artccs as unknown as FeatureCollection,
       stroked: true,
       filled: false,
@@ -531,21 +535,7 @@ function App() {
           />
         </DeckGL>
 
-        <div
-          className="absolute bottom-5 w-full p-5"
-
-          // style={{
-          //   position: "absolute",
-          //   bottom: "20px",
-          //   left: "50%",
-          //   transform: "translateX(-50%)",
-          //   width: "80%",
-          //   padding: "20px",
-          //   backgroundColor: "rgba(255, 255, 255, 0.9)",
-          //   borderRadius: "8px",
-          //   boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-          // }}
-        >
+        <div className="absolute bottom-5 w-full p-5">
           {Object.keys(trafficData).length > 0 && (
             <div className="flex items-end rounded bg-neutral-50/90 px-5 py-2 shadow">
               <div className="flex flex-col items-center">
