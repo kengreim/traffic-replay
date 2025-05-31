@@ -532,6 +532,7 @@ function App() {
           <Map
             mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
             mapStyle="mapbox://styles/mapbox/light-v11"
+            projection="mercator"
           />
         </DeckGL>
 
