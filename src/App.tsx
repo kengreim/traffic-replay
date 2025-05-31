@@ -18,7 +18,7 @@ import { type MapViewState, FlyToInterpolator } from "@deck.gl/core";
 const MAPBOX_ACCESS_TOKEN =
   "pk.eyJ1Ijoia2VuZ3JlaW0iLCJhIjoiY2x3aDBucGZ5MGI3bjJxc2EyNzNuODAyMyJ9.20EFStYOA8-EvOu4tsCkGg";
 
-const EVENTS_METADATA_URL = "https://data.vatsim-replay.com/events.json";
+//const EVENTS_METADATA_URL = "https://data.vatsim-replay.com/events.json";
 
 const DEFAULT_ZOOM = 7;
 const DEFAULT_VIEWPORT = {
@@ -46,7 +46,7 @@ interface EventConfig {
   advertised_end_time: string;
 }
 
-type EventsMetadata = { event: EventConfig; url: string }[];
+//type EventsMetadata = { event: EventConfig; url: string }[];
 
 interface TrafficData {
   [key: string]: FeatureCollection;
@@ -121,7 +121,7 @@ function App() {
     // get data
     const fetchData = async () => {
       const response = await fetch(
-        "https://data.vatsim-replay.com/2025-05-24-cowboys-spaceships-and-star-spangled-banners.json",
+        "https://data.vatsim-replay.com/2025-05-30-rivers-ranges-fno.json",
       );
       if (response.ok) {
         const event = (await response.json()) as EventCapture;
