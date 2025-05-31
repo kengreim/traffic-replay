@@ -143,33 +143,33 @@ function App() {
       }
     };
 
-    const loadDevData = async () => {
-      // @ts-ignore
-      const event = (await import(
-        "./test-data/2025-05-24-cowboys-spaceships-and-star-spangled-banners.json"
-      )) as EventCapture;
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setTrafficData(event.captures);
-      const timestamps = Object.keys(event.captures).sort();
-      setTimestamps(timestamps);
-      console.log(event.captures_length_bytes);
-      console.log(event.viewport_center);
-
-      setViewport({
-        longitude: event.viewport_center.x,
-        latitude: event.viewport_center.y,
-        pitch: 0,
-        bearing: 0,
-        zoom: DEFAULT_ZOOM,
-        transitionInterpolator: new FlyToInterpolator({ speed: 2 }),
-        transitionDuration: "auto",
-      });
-    };
+    // const loadDevData = async () => {
+    //   // @ts-ignore
+    //   const event = (await import(
+    //     "./test-data/2025-05-24-cowboys-spaceships-and-star-spangled-banners.json"
+    //   )) as EventCapture;
+    //   await new Promise((resolve) => setTimeout(resolve, 2000));
+    //   setTrafficData(event.captures);
+    //   const timestamps = Object.keys(event.captures).sort();
+    //   setTimestamps(timestamps);
+    //   console.log(event.captures_length_bytes);
+    //   console.log(event.viewport_center);
+    //
+    //   setViewport({
+    //     longitude: event.viewport_center.x,
+    //     latitude: event.viewport_center.y,
+    //     pitch: 0,
+    //     bearing: 0,
+    //     zoom: DEFAULT_ZOOM,
+    //     transitionInterpolator: new FlyToInterpolator({ speed: 2 }),
+    //     transitionDuration: "auto",
+    //   });
+    // };
 
     if (import.meta.env.PROD) {
       fetchData().catch(console.error);
     } else {
-      loadDevData().then(() => console.log("dev data loaded"));
+      //loadDevData().then(() => console.log("dev data loaded"));
     }
   }, []);
 
