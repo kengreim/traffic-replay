@@ -111,7 +111,7 @@ function App() {
     // get data
     const fetchData = async () => {
       const response = await fetch(
-        "https://data.vatsim-replay.com/2025-05-24-cowboys-spaceships-and-star-spangled-banners.json",
+        "https://data.vatsim-replay.com/2025-05-30-rivers-ranges-fno.json",
       );
       if (response.ok) {
         const data = (await response.json()) as EventCapture;
