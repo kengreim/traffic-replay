@@ -12,16 +12,30 @@ import { getAircraftIcon } from "./utils/icons.ts";
 import { Play, PlusIcon, StepBack, StepForward, X, Pause } from "lucide-react";
 import { StyledCheckbox } from "./components/ui-core/Checkbox.tsx";
 import type { CheckedState } from "./components/ui-core/Checkbox.tsx";
+import { type MapViewState, FlyToInterpolator } from "@deck.gl/core";
 
 // Replace with your Mapbox access token
 const MAPBOX_ACCESS_TOKEN =
   "pk.eyJ1Ijoia2VuZ3JlaW0iLCJhIjoiY2x3aDBucGZ5MGI3bjJxc2EyNzNuODAyMyJ9.20EFStYOA8-EvOu4tsCkGg";
+
+//const EVENTS_METADATA_URL = "https://data.vatsim-replay.com/events.json";
+
+const DEFAULT_ZOOM = 7;
+const DEFAULT_VIEWPORT = {
+  longitude: -98.583333,
+  latitude: 39.833333,
+  pitch: 0,
+  bearing: 0,
+  zoom: 4,
+};
 
 interface EventCapture {
   config: EventConfig;
   first_timestamp_key: string;
   last_timestamp_key: string;
   captures: TrafficData;
+  captures_length_bytes: number;
+  viewport_center: { x: number; y: number };
 }
 
 interface EventConfig {
@@ -31,6 +45,8 @@ interface EventConfig {
   advertised_start_time: string;
   advertised_end_time: string;
 }
+
+//type EventsMetadata = { event: EventConfig; url: string }[];
 
 interface TrafficData {
   [key: string]: FeatureCollection;
@@ -55,13 +71,7 @@ interface PilotData {
 }
 
 function App() {
-  const [viewport] = useState({
-    longitude: -95.3416,
-    latitude: 29.9931,
-    zoom: 7,
-    pitch: 0,
-    bearing: 0,
-  });
+  const [viewport, setViewport] = useState<MapViewState>(DEFAULT_VIEWPORT);
 
   const [trafficData, setTrafficData] = useState<TrafficData>({});
 
@@ -114,21 +124,46 @@ function App() {
         "https://data.vatsim-replay.com/2025-05-30-rivers-ranges-fno.json",
       );
       if (response.ok) {
-        const data = (await response.json()) as EventCapture;
-        setTrafficData(data.captures);
+        const event = (await response.json()) as EventCapture;
+        setTrafficData(event.captures);
 
         // Extract timestamps from the data
-        const timestamps = Object.keys(data.captures).sort();
+        const timestamps = Object.keys(event.captures).sort();
         setTimestamps(timestamps);
+
+        setViewport({
+          longitude: event.viewport_center.x,
+          latitude: event.viewport_center.y,
+          pitch: 0,
+          bearing: 0,
+          zoom: DEFAULT_ZOOM,
+          transitionInterpolator: new FlyToInterpolator({ speed: 2 }),
+          transitionDuration: "auto",
+        });
       }
     };
 
     const loadDevData = async () => {
-      const event = (await import("./test-data/consolidated.json")) as EventCapture;
+      // @ts-ignore
+      const event = (await import(
+        "./test-data/2025-05-24-cowboys-spaceships-and-star-spangled-banners.json"
+      )) as EventCapture;
       await new Promise((resolve) => setTimeout(resolve, 2000));
       setTrafficData(event.captures);
       const timestamps = Object.keys(event.captures).sort();
       setTimestamps(timestamps);
+      console.log(event.captures_length_bytes);
+      console.log(event.viewport_center);
+
+      setViewport({
+        longitude: event.viewport_center.x,
+        latitude: event.viewport_center.y,
+        pitch: 0,
+        bearing: 0,
+        zoom: DEFAULT_ZOOM,
+        transitionInterpolator: new FlyToInterpolator({ speed: 2 }),
+        transitionDuration: "auto",
+      });
     };
 
     if (import.meta.env.PROD) {
@@ -224,7 +259,7 @@ function App() {
       sizeMaxPixels: 150,
     }),
     new ScatterplotLayer({
-      id: "aircraft-dot-layer",
+      id: "ring-layer",
       data: filteredData?.features ?? [],
       pickable: false,
       getPosition: (d: Feature<Point, PilotProperties>) => [
@@ -242,7 +277,7 @@ function App() {
       updateTriggers: { getRadius: [ringsDistance] },
     }),
     new TextLayer({
-      id: "heading-layer",
+      id: "label-layer",
       data: filteredData?.features ?? [],
       pickable: false,
       getPosition: (d: Feature<Point, PilotProperties>) => [
@@ -279,7 +314,7 @@ function App() {
       updateTriggers: { getText: [callsign, speed, altitude, destination, departure] },
     }),
     new GeoJsonLayer({
-      id: "boundaries",
+      id: "boundaries-layer",
       data: artccs as unknown as FeatureCollection,
       stroked: true,
       filled: false,
@@ -500,21 +535,7 @@ function App() {
           />
         </DeckGL>
 
-        <div
-          className="absolute bottom-5 w-full p-5"
-
-          // style={{
-          //   position: "absolute",
-          //   bottom: "20px",
-          //   left: "50%",
-          //   transform: "translateX(-50%)",
-          //   width: "80%",
-          //   padding: "20px",
-          //   backgroundColor: "rgba(255, 255, 255, 0.9)",
-          //   borderRadius: "8px",
-          //   boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-          // }}
-        >
+        <div className="absolute bottom-5 w-full p-5">
           {Object.keys(trafficData).length > 0 && (
             <div className="flex items-end rounded bg-neutral-50/90 px-5 py-2 shadow">
               <div className="flex flex-col items-center">

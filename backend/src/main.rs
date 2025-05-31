@@ -112,6 +112,8 @@ struct EventCapture {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_timestamp_key: Option<String>,
     pub captures: HashMap<String, FeatureCollection>,
+    pub captures_length_bytes: usize,
+    pub viewport_center: Point<f64>,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -241,7 +243,7 @@ async fn main() -> Result<(), anyhow::Error> {
         error!(error = ?e, "failed to process data feeds");
     }
 
-    if let Err(e) = combine_captures(&event_config) {
+    if let Err(e) = combine_captures(&event_config, &airports) {
         error!(error = ?e, "failed to combine captures");
     }
 
@@ -388,7 +390,7 @@ async fn process_datafeeds(
 }
 
 #[tracing::instrument]
-fn combine_captures(config: &EventConfig) -> Result<(), Error> {
+fn combine_captures(config: &EventConfig, airports: &[&Airport]) -> Result<(), Error> {
     let mut all_snapshots = HashMap::new();
     let mut min_key = None;
     let mut max_key = None;
@@ -453,14 +455,21 @@ fn combine_captures(config: &EventConfig) -> Result<(), Error> {
         all_snapshots.insert(update.to_owned(), collection);
     }
 
+    let centroid = calculate_centroid(airports);
+    let captures_string = serde_json::to_string(&all_snapshots)?;
+    let captures_len = captures_string.len();
+    drop(captures_dir_string);
+
     let capture = EventCapture {
         config: config.clone(),
         first_timestamp_key: min_key,
         last_timestamp_key: max_key,
         captures: all_snapshots,
+        captures_length_bytes: captures_len,
+        viewport_center: centroid,
     };
 
-    let output_file_string = format!("./{}/consolidated.json", &event_slug);
+    let output_file_string = format!("./{}/{}.json", &event_slug, &event_slug);
     let mut file = File::create(&output_file_string)?;
     file.write_all(&serde_json::to_string(&capture)?.into_bytes())?;
 
@@ -476,6 +485,18 @@ fn event_slug(event: &EventConfig) -> String {
         event.advertised_start_time.day(),
         slugify(&event.name)
     )
+}
+
+fn calculate_centroid(airports: &[&Airport]) -> Point<f64> {
+    let mut sum_x = 0.0;
+    let mut sum_y = 0.0;
+    let len = airports.len() as f64;
+    for airport in airports {
+        sum_x += airport.point.x();
+        sum_y += airport.point.y();
+    }
+
+    Point::new(sum_x / len, sum_y / len)
 }
 
 #[allow(dead_code)]
