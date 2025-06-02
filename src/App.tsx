@@ -46,7 +46,7 @@ interface EventConfig {
   advertised_end_time: string;
 }
 
-//type EventsMetadata = { event: EventConfig; url: string }[];
+type EventsMetadata = { event: EventConfig; url: string }[];
 
 interface TrafficData {
   [key: string]: FeatureCollection;
