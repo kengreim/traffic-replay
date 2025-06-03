@@ -18,7 +18,8 @@ import { type MapViewState, FlyToInterpolator } from "@deck.gl/core";
 const MAPBOX_ACCESS_TOKEN =
   "pk.eyJ1Ijoia2VuZ3JlaW0iLCJhIjoiY2x3aDBucGZ5MGI3bjJxc2EyNzNuODAyMyJ9.20EFStYOA8-EvOu4tsCkGg";
 
-//const EVENTS_METADATA_URL = "https://data.vatsim-replay.com/events.json";
+const EVENTS_METADATA_URL =
+  "https://gist.githubusercontent.com/kengreim/982ace202cea631c80aee011631262de/raw/18024aca3121bf2c99637f718ccd79b4bfe25704/events.json";
 
 const DEFAULT_ZOOM = 7;
 const DEFAULT_VIEWPORT = {
@@ -46,7 +47,7 @@ interface EventConfig {
   advertised_end_time: string;
 }
 
-//type EventsMetadata = { event: EventConfig; url: string }[];
+type EventsMetadata = { event: EventConfig; url: string }[];
 
 interface TrafficData {
   [key: string]: FeatureCollection;
@@ -83,6 +84,9 @@ function App() {
   const [newArrivalAirport, setNewArrivalAirport] = useState("");
   const [newDepartureAirport, setNewDepartureAirport] = useState("");
 
+  const [eventsMetadata, setEventsMetadata] = useState<EventsMetadata>([]);
+  const [selectedEventUrl, setSelectedEventUrl] = useState<string>("");
+
   // Label toggles
   const [callsign, setCallsign] = useState<CheckedState>(true);
   const [speed, setSpeed] = useState<CheckedState>(false);
@@ -117,60 +121,51 @@ function App() {
     [newArrivalAirport, newDepartureAirport],
   );
 
+  const fetchEventData = async () => {
+    if (!selectedEventUrl) return;
+
+    const response = await fetch(selectedEventUrl);
+    if (response.ok) {
+      const event = (await response.json()) as EventCapture;
+      setTrafficData(event.captures);
+
+      // Extract timestamps from the data
+      const timestamps = Object.keys(event.captures).sort();
+      setTimestamps(timestamps);
+      setSliderIndex(0); // Reset slider position
+      setIsPlaying(false); // Stop playback
+
+      setViewport({
+        longitude: event.viewport_center.x,
+        latitude: event.viewport_center.y,
+        pitch: 0,
+        bearing: 0,
+        zoom: DEFAULT_ZOOM,
+        transitionInterpolator: new FlyToInterpolator({ speed: 2 }),
+        transitionDuration: "auto",
+      });
+    }
+  };
+
   useEffect(() => {
-    // get data
-    const fetchData = async () => {
-      const response = await fetch(
-        "https://data.vatsim-replay.com/2025-05-31-orlando-overload-2025.json",
-      );
-      if (response.ok) {
-        const event = (await response.json()) as EventCapture;
-        setTrafficData(event.captures);
-
-        // Extract timestamps from the data
-        const timestamps = Object.keys(event.captures).sort();
-        setTimestamps(timestamps);
-
-        setViewport({
-          longitude: event.viewport_center.x,
-          latitude: event.viewport_center.y,
-          pitch: 0,
-          bearing: 0,
-          zoom: DEFAULT_ZOOM,
-          transitionInterpolator: new FlyToInterpolator({ speed: 2 }),
-          transitionDuration: "auto",
-        });
+    // Fetch events metadata
+    const fetchEventsMetadata = async () => {
+      try {
+        const response = await fetch(EVENTS_METADATA_URL);
+        if (response.ok) {
+          const metadata = (await response.json()) as EventsMetadata;
+          setEventsMetadata(metadata);
+          // Select the first event by default
+          // if (metadata.length > 0) {
+          //   setSelectedEventUrl(metadata[0].url);
+          // }
+        }
+      } catch (error) {
+        console.error("Failed to fetch events metadata:", error);
       }
     };
 
-    // const loadDevData = async () => {
-    //   // @ts-ignore
-    //   const event = (await import(
-    //     "./test-data/2025-05-24-cowboys-spaceships-and-star-spangled-banners.json"
-    //   )) as EventCapture;
-    //   await new Promise((resolve) => setTimeout(resolve, 2000));
-    //   setTrafficData(event.captures);
-    //   const timestamps = Object.keys(event.captures).sort();
-    //   setTimestamps(timestamps);
-    //   console.log(event.captures_length_bytes);
-    //   console.log(event.viewport_center);
-    //
-    //   setViewport({
-    //     longitude: event.viewport_center.x,
-    //     latitude: event.viewport_center.y,
-    //     pitch: 0,
-    //     bearing: 0,
-    //     zoom: DEFAULT_ZOOM,
-    //     transitionInterpolator: new FlyToInterpolator({ speed: 2 }),
-    //     transitionDuration: "auto",
-    //   });
-    // };
-
-    if (import.meta.env.PROD) {
-      fetchData().catch(console.error);
-    } else {
-      //loadDevData().then(() => console.log("dev data loaded"));
-    }
+    fetchEventsMetadata().then(() => console.log("Event metadata fetched"));
   }, []);
 
   const currentData = useMemo(
@@ -376,6 +371,34 @@ function App() {
       {/* Sidebar */}
       <div className="z-10 flex flex-col space-y-5 overflow-y-auto overscroll-contain bg-slate-900 p-6 text-white shadow-md">
         <h1 className="text-2xl font-bold">Traffic Replay</h1>
+        <div className="flex flex-col space-y-2">
+          <div className="mb-2">
+            <h2 className="text-xl">Event</h2>
+          </div>
+          <div className="flex items-center space-x-2">
+            <select
+              id="event-select"
+              className="w-48 rounded bg-gray-700 px-2 py-1 text-sm text-white"
+              value={selectedEventUrl}
+              onChange={(e) => setSelectedEventUrl(e.target.value)}
+            >
+              <option value="" disabled selected hidden>
+                Please Choose...
+              </option>
+              {eventsMetadata.map((event) => (
+                <option key={event.url} value={event.url}>
+                  {event.event.name}
+                </option>
+              ))}
+            </select>
+            <button
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded bg-sky-600 transition-colors hover:bg-sky-500"
+              onClick={fetchEventData}
+            >
+              Go
+            </button>
+          </div>
+        </div>
 
         <div className="flex flex-col space-y-2">
           <div>
