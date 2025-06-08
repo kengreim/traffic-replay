@@ -19,7 +19,7 @@ const MAPBOX_ACCESS_TOKEN =
   "pk.eyJ1Ijoia2VuZ3JlaW0iLCJhIjoiY2x3aDBucGZ5MGI3bjJxc2EyNzNuODAyMyJ9.20EFStYOA8-EvOu4tsCkGg";
 
 const EVENTS_METADATA_URL =
-  "https://gist.githubusercontent.com/kengreim/982ace202cea631c80aee011631262de/raw/870855f69ed9f4c5abae466bf89c900c9dcfd491/events.json";
+  "https://gist.githubusercontent.com/kengreim/982ace202cea631c80aee011631262de/raw/dbde100131a82a6a25ec5dfb63ddc9ba168e1a20/events.json";
 
 const DEFAULT_ZOOM = 7;
 const DEFAULT_VIEWPORT = {
