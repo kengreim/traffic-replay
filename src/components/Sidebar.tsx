@@ -94,8 +94,8 @@ export function Sidebar() {
             <option value="" disabled selected hidden>
               Please Choose...
             </option>
-            {eventsMetadata.map((event) => (
-              <option key={event.url} value={event.url}>
+            {eventsMetadata.map((event, index) => (
+              <option key={`${event.url}-${index}`} value={event.url}>
                 {event.event.name}
               </option>
             ))}
