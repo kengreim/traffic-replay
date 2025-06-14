@@ -40,7 +40,7 @@ export function Sidebar() {
     setNewDepartureAirport,
     addRouteFilter,
     removeRouteFilter,
-    togglePlayback,
+    stopPlayback,
   } = useStore();
 
   const fetchEventData = async () => {
@@ -55,7 +55,7 @@ export function Sidebar() {
       const timestamps = Object.keys(event.captures).sort();
       setTimestamps(timestamps);
       setSliderIndex(0); // Reset slider position
-      togglePlayback(); // Stop playback
+      stopPlayback();
     }
   };
 

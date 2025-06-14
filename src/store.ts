@@ -46,6 +46,7 @@ interface PlaybackState {
   playbackSpeed: number;
   togglePlayback: () => void;
   setPlaybackSpeed: (speed: number) => void;
+  stopPlayback: () => void;
 }
 
 interface EventState {
@@ -122,6 +123,7 @@ export const useStore = create<StoreState>()((set) => ({
   isPlaying: false,
   playbackSpeed: 1,
   togglePlayback: () => set((state: StoreState) => ({ isPlaying: !state.isPlaying })),
+  stopPlayback: () => set({ isPlaying: false }),
   setPlaybackSpeed: (playbackSpeed: number) => set({ playbackSpeed }),
 
   // Event state
