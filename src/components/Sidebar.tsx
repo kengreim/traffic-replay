@@ -91,8 +91,8 @@ export function Sidebar() {
             value={selectedEventUrl}
             onChange={(e) => setSelectedEventUrl(e.target.value)}
           >
-            <option value="" disabled selected hidden>
-              Please Choose...
+            <option value="" disabled hidden>
+              Choose event...
             </option>
             {eventsMetadata.map((event, index) => (
               <option key={`${event.url}-${index}`} value={event.url}>
