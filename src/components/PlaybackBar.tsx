@@ -19,26 +19,28 @@ export function PlaybackBar() {
   const pointerDownSuspendedPlay = useRef(false);
 
   const incrementTimeSlider = () => {
-    setSliderIndex((current: number) => {
-      const next = Math.min(current + 1, timestamps.length - 1);
-      if (current === next) {
-        togglePlayback();
-        return current;
-      }
-      return next;
-    });
-    return sliderIndex < timestamps.length - 1;
+    if (timestamps.length === 0) return false;
+    
+    const nextIndex = Math.min(sliderIndex + 1, timestamps.length - 1);
+    if (nextIndex === sliderIndex) {
+      togglePlayback();
+      return false;
+    }
+    
+    setSliderIndex(nextIndex);
+    return nextIndex < timestamps.length - 1;
   };
 
   const decrementTimeSlider = () => {
-    setSliderIndex((current: number) => {
-      const next = Math.max(current - 1, 0);
-      if (current === next) {
-        return current;
-      }
-      return next;
-    });
-    return sliderIndex > 0;
+    if (timestamps.length === 0) return false;
+    
+    const nextIndex = Math.max(sliderIndex - 1, 0);
+    if (nextIndex === sliderIndex) {
+      return false;
+    }
+    
+    setSliderIndex(nextIndex);
+    return nextIndex > 0;
   };
 
   const timestampString = useMemo(() => {

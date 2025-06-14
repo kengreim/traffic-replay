@@ -1,4 +1,4 @@
-import { create, type StateCreator } from "zustand";
+import { create } from "zustand";
 import type { MapViewState } from "@deck.gl/core";
 import type { CheckedState } from "./components/ui-core/Checkbox";
 import type { EventsMetadata, TrafficData } from "./types/vatsim-capture";
@@ -76,7 +76,7 @@ type StoreState = ViewportState &
   FilterState &
   RingState;
 
-export const useStore = create<StoreState>((set: StateCreator<StoreState>["setState"]) => ({
+export const useStore = create<StoreState>()((set) => ({
   // Viewport state
   viewport: DEFAULT_VIEWPORT,
   setViewport: (viewport: MapViewState) => set({ viewport }),
