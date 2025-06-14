@@ -79,20 +79,6 @@
   },
   {
     "event": {
-      "name": "ZDV Live 2025",
-      "artccs": [
-        "ZDV"
-      ],
-      "airports": [
-        "KDEN"
-      ],
-      "advertised_start_time": "2025-06-07T23:00:00Z",
-      "advertised_end_time": "2025-06-08T03:00:00Z"
-    },
-    "url": "https://data.vatsim-replay.com/2025-06-07-zdv-live-2025.json"
-  },
-  {
-    "event": {
       "name": "Fourth of July Preparty",
       "artccs": [
         "ZDC"
