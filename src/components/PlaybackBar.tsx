@@ -1,7 +1,7 @@
 import { Pause, Play, StepBack, StepForward } from "lucide-react";
 import { Slider } from "radix-ui";
 import { useStore } from "../store";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useCallback } from "react";
 
 export function PlaybackBar() {
   const {
@@ -18,30 +18,21 @@ export function PlaybackBar() {
   const playIntervalRef = useRef<number | null>(null);
   const pointerDownSuspendedPlay = useRef(false);
 
-  const incrementTimeSlider = () => {
+  const incrementTimeSlider = useCallback(() => {
     if (timestamps.length === 0) return false;
-    
+
     const nextIndex = Math.min(sliderIndex + 1, timestamps.length - 1);
-    if (nextIndex === sliderIndex) {
-      togglePlayback();
-      return false;
-    }
-    
     setSliderIndex(nextIndex);
     return nextIndex < timestamps.length - 1;
-  };
+  }, [timestamps.length, sliderIndex, setSliderIndex]);
 
-  const decrementTimeSlider = () => {
+  const decrementTimeSlider = useCallback(() => {
     if (timestamps.length === 0) return false;
-    
+
     const nextIndex = Math.max(sliderIndex - 1, 0);
-    if (nextIndex === sliderIndex) {
-      return false;
-    }
-    
     setSliderIndex(nextIndex);
     return nextIndex > 0;
-  };
+  }, [timestamps.length, sliderIndex, setSliderIndex]);
 
   const timestampString = useMemo(() => {
     if (timestamps !== undefined && sliderIndex !== undefined && timestamps.length > 0) {
@@ -70,7 +61,7 @@ export function PlaybackBar() {
         window.clearInterval(playIntervalRef.current);
       }
     };
-  }, [isPlaying, playbackSpeed]);
+  }, [isPlaying, playbackSpeed, incrementTimeSlider, togglePlayback]);
 
   return (
     <div className="absolute bottom-5 w-full p-5">
@@ -81,7 +72,9 @@ export function PlaybackBar() {
               <StepBack
                 className="cursor-pointer hover:scale-105"
                 onClick={() => {
-                  togglePlayback();
+                  if (isPlaying) {
+                    togglePlayback();
+                  }
                   decrementTimeSlider();
                 }}
               />
@@ -93,7 +86,9 @@ export function PlaybackBar() {
               <StepForward
                 className="cursor-pointer hover:scale-105"
                 onClick={() => {
-                  togglePlayback();
+                  if (isPlaying) {
+                    togglePlayback();
+                  }
                   incrementTimeSlider();
                 }}
               />
