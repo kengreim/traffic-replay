@@ -1,7 +1,82 @@
 import { StyledCheckbox } from "./ui-core/Checkbox.tsx";
 import { PlusIcon, X } from "lucide-react";
+import { useStore } from "../store";
+import type { FormEvent } from "react";
+import type { EventCapture } from "../types/vatsim-capture";
 
-function Sidebar() {
+interface Route {
+  arrival: string;
+  departure: string;
+}
+
+export function Sidebar() {
+  const {
+    selectedEventUrl,
+    setSelectedEventUrl,
+    eventsMetadata,
+    setTrafficData,
+    setTimestamps,
+    setSliderIndex,
+    callsign,
+    setCallsign,
+    speed,
+    setSpeed,
+    altitude,
+    setAltitude,
+    departure,
+    setDeparture,
+    destination,
+    setDestination,
+    rings,
+    setRings,
+    ringsDistance,
+    setRingsDistance,
+    hideSlowAircraft,
+    setHideSlowAircraft,
+    routeFilters,
+    newArrivalAirport,
+    setNewArrivalAirport,
+    newDepartureAirport,
+    setNewDepartureAirport,
+    addRouteFilter,
+    removeRouteFilter,
+    togglePlayback,
+  } = useStore();
+
+  const fetchEventData = async () => {
+    if (!selectedEventUrl) return;
+
+    const response = await fetch(selectedEventUrl);
+    if (response.ok) {
+      const event = (await response.json()) as EventCapture;
+      setTrafficData(event.captures);
+
+      // Extract timestamps from the data
+      const timestamps = Object.keys(event.captures).sort();
+      setTimestamps(timestamps);
+      setSliderIndex(0); // Reset slider position
+      togglePlayback(); // Stop playback
+    }
+  };
+
+  const handleAddRouteFilter = (e: FormEvent) => {
+    e.preventDefault();
+
+    if (newArrivalAirport && newDepartureAirport) {
+      const filter: Route = {
+        arrival: newArrivalAirport.toUpperCase(),
+        departure: newDepartureAirport.toUpperCase(),
+      };
+      if (!routeFilters.includes(filter)) {
+        addRouteFilter(filter);
+      }
+    }
+  };
+
+  const handleRemoveRouteFilter = (route: Route) => {
+    removeRouteFilter(route);
+  };
+
   return (
     <div className="z-10 flex flex-col space-y-5 overflow-y-auto overscroll-contain bg-slate-900 p-6 text-white shadow-md">
       <h1 className="text-2xl font-bold">Traffic Replay</h1>

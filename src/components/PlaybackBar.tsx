@@ -1,7 +1,75 @@
 import { Pause, Play, StepBack, StepForward } from "lucide-react";
 import { Slider } from "radix-ui";
+import { useStore } from "../store";
+import { useEffect, useMemo, useRef } from "react";
 
 export function PlaybackBar() {
+  const {
+    trafficData,
+    timestamps,
+    sliderIndex,
+    setSliderIndex,
+    isPlaying,
+    togglePlayback,
+    playbackSpeed,
+    setPlaybackSpeed,
+  } = useStore();
+
+  const playIntervalRef = useRef<number | null>(null);
+  const pointerDownSuspendedPlay = useRef(false);
+
+  const incrementTimeSlider = () => {
+    setSliderIndex((current: number) => {
+      const next = Math.min(current + 1, timestamps.length - 1);
+      if (current === next) {
+        togglePlayback();
+        return current;
+      }
+      return next;
+    });
+    return sliderIndex < timestamps.length - 1;
+  };
+
+  const decrementTimeSlider = () => {
+    setSliderIndex((current: number) => {
+      const next = Math.max(current - 1, 0);
+      if (current === next) {
+        return current;
+      }
+      return next;
+    });
+    return sliderIndex > 0;
+  };
+
+  const timestampString = useMemo(() => {
+    if (timestamps !== undefined && sliderIndex !== undefined && timestamps.length > 0) {
+      const s = timestamps[sliderIndex];
+      return `${s.substring(8, 10)}:${s.substring(10, 12)}:${s.substring(12, 14)}`;
+    } else {
+      return "";
+    }
+  }, [timestamps, sliderIndex]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      playIntervalRef.current = window.setInterval(() => {
+        const hasMore = incrementTimeSlider();
+        if (!hasMore) {
+          togglePlayback();
+        }
+      }, 1000 / playbackSpeed);
+    } else if (playIntervalRef.current !== null) {
+      window.clearInterval(playIntervalRef.current);
+      playIntervalRef.current = null;
+    }
+
+    return () => {
+      if (playIntervalRef.current !== null) {
+        window.clearInterval(playIntervalRef.current);
+      }
+    };
+  }, [isPlaying, playbackSpeed]);
+
   return (
     <div className="absolute bottom-5 w-full p-5">
       {Object.keys(trafficData).length > 0 && (
@@ -11,7 +79,7 @@ export function PlaybackBar() {
               <StepBack
                 className="cursor-pointer hover:scale-105"
                 onClick={() => {
-                  setIsPlaying(false);
+                  togglePlayback();
                   decrementTimeSlider();
                 }}
               />
@@ -23,7 +91,7 @@ export function PlaybackBar() {
               <StepForward
                 className="cursor-pointer hover:scale-105"
                 onClick={() => {
-                  setIsPlaying(false);
+                  togglePlayback();
                   incrementTimeSlider();
                 }}
               />
@@ -35,8 +103,8 @@ export function PlaybackBar() {
                 onChange={(e) => {
                   setPlaybackSpeed(Number(e.target.value));
                   if (isPlaying) {
-                    setIsPlaying(false);
-                    setTimeout(() => setIsPlaying(true), 0);
+                    togglePlayback();
+                    setTimeout(() => togglePlayback(), 0);
                   }
                 }}
                 className="rounded border border-gray-300 px-2 py-1 text-sm"
@@ -61,13 +129,13 @@ export function PlaybackBar() {
                 onValueChange={(v) => setSliderIndex(v[0])}
                 onPointerDown={() => {
                   if (isPlaying) {
-                    setIsPlaying(false);
+                    togglePlayback();
                     pointerDownSuspendedPlay.current = true;
                   }
                 }}
                 onPointerUp={() => {
                   if (pointerDownSuspendedPlay.current) {
-                    setIsPlaying(true);
+                    togglePlayback();
                     pointerDownSuspendedPlay.current = false;
                   }
                 }}
