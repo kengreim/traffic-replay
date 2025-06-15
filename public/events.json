@@ -45,5 +45,55 @@
       "advertised_end_time": "2025-06-01T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-05-31-orlando-overload-2025.json"
+  },
+  {
+    "event": {
+      "name": "ZDV Live 2025",
+      "artccs": [
+        "ZDV"
+      ],
+      "airports": [
+        "KDEN"
+      ],
+      "advertised_start_time": "2025-06-07T23:00:00Z",
+      "advertised_end_time": "2025-06-08T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-06-07-zdv-live-2025.json"
+  },
+  {
+    "event": {
+      "name": "Live from New York: It's Saturday Ops!",
+      "artccs": [
+        "ZNY"
+      ],
+      "airports": [
+        "KEWR",
+        "KJFK",
+        "KLGA",
+        "KPHL"
+      ],
+      "advertised_start_time": "2025-06-07T14:00:00Z",
+      "advertised_end_time": "2025-06-07T21:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-06-07-live-from-new-york-it-s-saturday-ops.json"
+  },
+  {
+    "event": {
+      "name": "ZLA Live 2025",
+      "artccs": [
+        "ZLA"
+      ],
+      "airports": [
+        "KLAX",
+        "KSAN",
+        "KSNA",
+        "KBUR",
+        "KONT",
+        "KPSP"
+      ],
+      "advertised_start_time": "2025-06-14T23:00:00Z",
+      "advertised_end_time": "2025-06-15T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-06-14-zla-live-2025.json"
   }
 ]
