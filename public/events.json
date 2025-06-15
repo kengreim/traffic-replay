@@ -79,6 +79,22 @@
   },
   {
     "event": {
+      "name": "Fourth of July Preparty",
+      "artccs": [
+        "ZDC"
+      ],
+      "airports": [
+        "KIAD",
+        "KDCA",
+        "KBWI"
+      ],
+      "advertised_start_time": "2025-06-13T23:00:00Z",
+      "advertised_end_time": "2025-06-14T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-06-13-fourth-of-july-preparty.json"
+  },
+  {
+    "event": {
       "name": "ZLA Live 2025",
       "artccs": [
         "ZLA"
