@@ -92,5 +92,24 @@
       "advertised_end_time": "2025-06-14T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-06-13-fourth-of-july-preparty.json"
+  },
+  {
+    "event": {
+      "name": "ZLA Live 2025",
+      "artccs": [
+        "ZLA"
+      ],
+      "airports": [
+        "KLAX",
+        "KSAN",
+        "KSNA",
+        "KBUR",
+        "KONT",
+        "KPSP"
+      ],
+      "advertised_start_time": "2025-06-14T23:00:00Z",
+      "advertised_end_time": "2025-06-15T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-06-14-zla-live-2025.json"
   }
 ]
