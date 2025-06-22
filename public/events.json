@@ -111,5 +111,20 @@
       "advertised_end_time": "2025-06-15T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-06-14-zla-live-2025.json"
+  },
+  {
+    "event": {
+      "name": "ZFW Summer Simmer",
+      "artccs": [
+        "ZFW"
+      ],
+      "airports": [
+        "KDFW",
+        "KDAL"
+      ],
+      "advertised_start_time": "2025-06-21T23:00:00Z",
+      "advertised_end_time": "2025-06-22T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-06-21-zfw-summer-simmer.json"
   }
 ]
