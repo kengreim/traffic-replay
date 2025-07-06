@@ -148,5 +148,19 @@
       "advertised_end_time": "2025-06-28T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-06-27-fno-into-fsexpo-live-from-providence-ri.json"
+  },
+  {
+    "event": {
+      "name": "Miami Midsummer Takeoff",
+      "artccs": [
+        "ZMA"
+      ],
+      "airports": [
+        "KMIA"
+      ],
+      "advertised_start_time": "2025-07-05T23:00:00Z",
+      "advertised_end_time": "2025-07-06T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-07-05-miami-midsummer-takeoff.json"
   }
 ]
