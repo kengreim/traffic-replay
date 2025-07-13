@@ -162,5 +162,19 @@
       "advertised_end_time": "2025-07-06T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-07-05-miami-midsummer-takeoff.json"
+  },
+  {
+    "event": {
+      "name": "ZSE Live 2025",
+      "artccs": [
+        "ZSE"
+      ],
+      "airports": [
+        "KSEA"
+      ],
+      "advertised_start_time": "2025-07-12T23:00:00Z",
+      "advertised_end_time": "2025-07-13T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-07-12-zse-live-2025.json"
   }
 ]
