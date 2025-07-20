@@ -176,5 +176,37 @@
       "advertised_end_time": "2025-07-13T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-07-12-zse-live-2025.json"
+  },
+  {
+    "event": {
+      "name": "Summer in the South",
+      "artccs": [
+        "ZHU",
+        "ZME",
+        "ZTL"
+      ],
+      "airports": [
+        "KMSY",
+        "KMEM",
+        "KCLT"
+      ],
+      "advertised_start_time": "2025-07-18T23:00:00Z",
+      "advertised_end_time": "2025-07-19T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-07-18-summer-in-the-south.json"
+  },
+  {
+    "event": {
+      "name": "Northern Migration XX",
+      "artccs": [
+        "ZMP"
+      ],
+      "airports": [
+        "KMSP"
+      ],
+      "advertised_start_time": "2025-07-19T23:00:00Z",
+      "advertised_end_time": "2025-07-20T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-07-19-northern-migration-xx.json"
   }
 ]
