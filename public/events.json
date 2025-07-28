@@ -208,5 +208,19 @@
       "advertised_end_time": "2025-07-20T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-07-19-northern-migration-xx.json"
+  },
+  {
+    "event": {
+      "name": "The City in the Forest (Atlanta Live Event)",
+      "artccs": [
+        "ZTL"
+      ],
+      "airports": [
+        "KATL"
+      ],
+      "advertised_start_time": "2025-07-26T22:00:00Z",
+      "advertised_end_time": "2025-07-27T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-07-26-the-city-in-the-forest-atlanta-live-event.json"
   }
 ]
