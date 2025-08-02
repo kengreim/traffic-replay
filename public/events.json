@@ -222,5 +222,19 @@
       "advertised_end_time": "2025-07-27T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-07-26-the-city-in-the-forest-atlanta-live-event.json"
+  },
+  {
+    "event": {
+      "name": "Tailgating for the Texans",
+      "artccs": [
+        "ZHU"
+      ],
+      "airports": [
+        "KIAH"
+      ],
+      "advertised_start_time": "2025-08-01T23:00:00Z",
+      "advertised_end_time": "2025-08-02T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-08-01-tailgating-for-the-texans.json"
   }
 ]
