@@ -3,6 +3,8 @@ import { PlusIcon, X } from "lucide-react";
 import { useStore } from "../store";
 import type { FormEvent } from "react";
 import type { EventCapture } from "../types/vatsim-capture";
+import { EventSelectionTable } from "./EventSelectionTable";
+import { useState } from "react";
 
 interface Route {
   arrival: string;
@@ -43,6 +45,8 @@ export function Sidebar() {
     stopPlayback,
   } = useStore();
 
+  const [isEventTableOpen, setIsEventTableOpen] = useState(false);
+
   const fetchEventData = async () => {
     if (!selectedEventUrl) return;
 
@@ -77,6 +81,11 @@ export function Sidebar() {
     removeRouteFilter(route);
   };
 
+  const handleSelectEvent = (url: string) => {
+    setSelectedEventUrl(url);
+    fetchEventData();
+  };
+
   return (
     <div className="z-10 flex flex-col space-y-5 overflow-y-auto overscroll-contain bg-slate-900 p-6 text-white shadow-md">
       <h1 className="text-2xl font-bold">Traffic Replay</h1>
@@ -85,29 +94,21 @@ export function Sidebar() {
           <h2 className="text-xl">Event</h2>
         </div>
         <div className="flex items-center space-x-2">
-          <select
-            id="event-select"
-            className="w-48 rounded bg-gray-700 px-2 py-1 text-sm text-white"
-            value={selectedEventUrl}
-            onChange={(e) => setSelectedEventUrl(e.target.value)}
-          >
-            <option value="" disabled hidden>
-              Choose event...
-            </option>
-            {eventsMetadata.map((event, index) => (
-              <option key={`${event.url}-${index}`} value={event.url}>
-                {event.event.name}
-              </option>
-            ))}
-          </select>
           <button
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded bg-sky-600 transition-colors hover:bg-sky-500"
-            onClick={fetchEventData}
+            className="flex h-8 w-full cursor-pointer items-center justify-center rounded bg-sky-600 px-4 text-sm transition-colors hover:bg-sky-500"
+            onClick={() => setIsEventTableOpen(true)}
           >
-            Go
+            Select Event
           </button>
         </div>
       </div>
+
+      <EventSelectionTable
+        isOpen={isEventTableOpen}
+        onClose={() => setIsEventTableOpen(false)}
+        events={eventsMetadata}
+        onSelectEvent={handleSelectEvent}
+      />
 
       <div className="flex flex-col space-y-2">
         <div>
