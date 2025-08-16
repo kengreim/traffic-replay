@@ -269,5 +269,22 @@
       "advertised_end_time": "2025-08-16T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-08-15-northwest-to-norcal-fno.json"
+  },
+  {
+    "event": {
+      "name": "30 Hours of EWR + Greetings From Miami Live",
+      "artccs": [
+        "ZNY",
+        "ZMA"
+      ],
+      "airports": [
+        "KEWR",
+        "KMIA",
+        "KFLL"
+      ],
+      "advertised_start_time": "2025-08-16T16:00:00Z",
+      "advertised_end_time": "2025-08-16T21:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-08-16-30-hours-of-ewr-greetings-from-miami-live.json"
   }
 ]
