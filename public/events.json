@@ -286,5 +286,65 @@
       "advertised_end_time": "2025-08-16T21:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-08-16-30-hours-of-ewr-greetings-from-miami-live.json"
+  },
+  {
+    "event": {
+      "name": "Journey out of Detroit 3",
+      "artccs": [
+        "ZOB"
+      ],
+      "airports": [
+        "KDTW"
+      ],
+      "advertised_start_time": "2025-08-22T23:00:00Z",
+      "advertised_end_time": "2025-08-23T00:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-08-22-journey-out-of-detroit-3.json"
+  },
+  {
+    "event": {
+      "name": "ZHU's Wheel of Misfortune",
+      "artccs": [
+        "ZHU"
+      ],
+      "airports": [
+        "KIAH",
+        "KHOU",
+        "KMOB",
+        "KGPT",
+        "KMSY",
+        "KBTR",
+        "KAEX",
+        "KLFT",
+        "KLCH",
+        "KBPT",
+        "KGLS",
+        "KSGR",
+        "KCXO",
+        "KCLL",
+        "KAUS",
+        "KSAT",
+        "KVCT",
+        "KCRP",
+        "KBRO"
+      ],
+      "advertised_start_time": "2025-08-23T23:00:00Z",
+      "advertised_end_time": "2025-08-24T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-08-23-zhu-s-wheel-of-misfortune"
+  },
+  {
+    "event": {
+      "name": "Ho'omaha",
+      "artccs": [
+        "ZHN"
+      ],
+      "airports": [
+        "PHNL"
+      ],
+      "advertised_start_time": "2025-08-30T21:00:00Z",
+      "advertised_end_time": "2025-08-31T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-08-30-ho-omaha.json"
   }
 ]
