@@ -346,5 +346,19 @@
       "advertised_end_time": "2025-08-31T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-08-30-ho-omaha.json"
+  },
+  {
+    "event": {
+      "name": "The Plane Train FNO",
+      "artccs": [
+        "ZTL"
+      ],
+      "airports": [
+        "KATL"
+      ],
+      "advertised_start_time": "2025-09-05T23:00:00Z",
+      "advertised_end_time": "2025-09-06T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-09-05-the-plane-train-fno.json"
   }
 ]
