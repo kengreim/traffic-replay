@@ -360,5 +360,22 @@
       "advertised_end_time": "2025-09-06T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-09-05-the-plane-train-fno.json"
+  },
+  {
+    "event": {
+      "name": "Rush to the Red Carpet FNO",
+      "artccs": [
+        "ZLA"
+      ],
+      "airports": [
+        "KLAX",
+        "KSAN",
+        "KBUR",
+        "KVNY"
+      ],
+      "advertised_start_time": "2025-09-12T23:00:00Z",
+      "advertised_end_time": "2025-09-13T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-09-12-rush-to-the-red-carpet-fno.json"
   }
 ]
