@@ -421,5 +421,23 @@
       "advertised_end_time": "2025-09-27T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-09-26-the-seattle-salmon-run-fno.json"
+  },
+  {
+    "event": {
+      "name": "305 To Paradise",
+      "artccs": [
+        "ZMA",
+        "ZSU"
+      ],
+      "airports": [
+        "KMIA",
+        "TJSJ",
+        "TISX",
+        "TIST"
+      ],
+      "advertised_start_time": "2025-09-27T23:00:00Z",
+      "advertised_end_time": "2025-09-28T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-09-27-305-to-paradise.json"
   }
 ]

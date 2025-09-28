@@ -168,15 +168,19 @@ fn load_airports() -> Result<HashMap<IcaoId, Airport>, anyhow::Error> {
 
 fn filter_pilots_by_distance_and_field(
     mut pilots: Vec<Pilot>,
-    icao_airports: &[&Airport],
+    config_airports: &[(String, Option<&Airport>)],
     distance_nm: u16,
 ) -> Vec<Pilot> {
     pilots.retain(|p| {
+        let mut airports_with_data = config_airports
+            .iter()
+            .filter_map(|(_, airport_data)| *airport_data);
+
         p.flight_plan.as_ref().is_some_and(|fp| {
-            icao_airports
+            config_airports
                 .iter()
-                .any(|apt| apt.icao_id == fp.departure || apt.icao_id == fp.arrival)
-        }) || icao_airports.iter().any(|apt| {
+                .any(|apt| apt.0 == fp.departure || apt.0 == fp.arrival)
+        }) || airports_with_data.any(|apt| {
             Haversine.distance(apt.point, Point::new(p.longitude, p.latitude))
                 < (f64::from(distance_nm) * NM_TO_METERS)
         })
@@ -219,10 +223,10 @@ async fn main() -> Result<(), anyhow::Error> {
     let mut airports = vec![];
     for icao_id in &event_config.airports {
         if let Some(airport) = all_airports.get(icao_id) {
-            airports.push(airport);
+            airports.push((icao_id.clone(), Some(airport)));
         } else {
-            error!(id = ?icao_id, "invalid airport ICAO id, not found in FAA data");
-            bail!("invalid airport ICAO id {icao_id}, not found in FAA data");
+            warn!(id = ?icao_id, "invalid airport ICAO id, not found in FAA data");
+            airports.push((icao_id.clone(), None));
         }
     }
 
@@ -338,7 +342,7 @@ async fn datafeed_loop(api: Vatsim, tx: Sender<V3ResponseData>, event_config: &E
 
 async fn process_datafeeds(
     mut rx: Receiver<V3ResponseData>,
-    airports: &[&Airport],
+    airports: &[(String, Option<&Airport>)],
     event_slug: &str,
 ) -> Result<(), Error> {
     info!("Starting datafeed processor");
@@ -390,7 +394,10 @@ async fn process_datafeeds(
 }
 
 #[tracing::instrument]
-fn combine_captures(config: &EventConfig, airports: &[&Airport]) -> Result<(), Error> {
+fn combine_captures(
+    config: &EventConfig,
+    airports: &[(String, Option<&Airport>)],
+) -> Result<(), Error> {
     let mut all_snapshots = HashMap::new();
     let mut min_key = None;
     let mut max_key = None;
@@ -487,11 +494,15 @@ fn event_slug(event: &EventConfig) -> String {
     )
 }
 
-fn calculate_centroid(airports: &[&Airport]) -> Point<f64> {
+fn calculate_centroid(airports: &[(String, Option<&Airport>)]) -> Point<f64> {
+    let airports_with_data_only = airports
+        .iter()
+        .filter_map(|(_, airport)| airport.to_owned())
+        .collect::<Vec<_>>();
     let mut sum_x = 0.0;
     let mut sum_y = 0.0;
-    let len = airports.len() as f64;
-    for airport in airports {
+    let len = airports_with_data_only.len() as f64;
+    for airport in airports_with_data_only {
         sum_x += airport.point.x();
         sum_y += airport.point.y();
     }
