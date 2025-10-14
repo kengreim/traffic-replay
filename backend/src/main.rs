@@ -220,6 +220,11 @@ async fn main() -> Result<(), anyhow::Error> {
         }
     };
 
+    // Check to make sure we didn't screw up config file with bad start and end times
+    if event_config.advertised_end_time <= event_config.advertised_start_time {
+        bail!("advertised end time cannot be before advertised start time");
+    }
+
     let mut airports = vec![];
     for icao_id in &event_config.airports {
         if let Some(airport) = all_airports.get(icao_id) {
