@@ -453,5 +453,21 @@
       "advertised_end_time": "2025-10-18T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-10-17-nightmare-on-colfax-iii.json"
+  },
+  {
+    "event": {
+      "name": "Live from Chicago 2025",
+      "artccs": [
+        "ZAU"
+      ],
+      "airports": [
+        "KORD",
+        "KMDW",
+        "KMKE"
+      ],
+      "advertised_start_time": "2025-10-18T23:00:00Z",
+      "advertised_end_time": "2025-10-19T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-10-18-live-from-chicago-2025.json"
   }
 ]
