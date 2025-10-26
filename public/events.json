@@ -487,5 +487,19 @@
       "advertised_end_time": "2025-10-25T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-10-24-florida-night-ops.json"
+  },
+  {
+    "event": {
+      "name": "RNGRRs on the Runway",
+      "artccs": [
+        "ZNY"
+      ],
+      "airports": [
+        "KJFK"
+      ],
+      "advertised_start_time": "2025-10-25T23:00:00Z",
+      "advertised_end_time": "2025-10-26T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-10-25-rngrrs-on-the-runway.json"
   }
 ]
