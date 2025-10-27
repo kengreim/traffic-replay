@@ -501,5 +501,21 @@
       "advertised_end_time": "2025-10-26T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-10-25-rngrrs-on-the-runway.json"
+  },
+  {
+    "event": {
+      "name": "Trick or Bay Tracon",
+      "artccs": [
+        "ZOA"
+      ],
+      "airports": [
+        "KSFO",
+        "KOAK",
+        "KSJC"
+      ],
+      "advertised_start_time": "2025-10-26T23:00:00Z",
+      "advertised_end_time": "2025-10-27T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-10-26-trick-or-bay-tracon.json"
   }
 ]
