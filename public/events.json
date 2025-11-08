@@ -2,12 +2,8 @@
   {
     "event": {
       "name": "Cowboys Spaceships and Star Spangled Banners",
-      "artccs": [
-        "ZHU"
-      ],
-      "airports": [
-        "KIAH"
-      ],
+      "artccs": ["ZHU"],
+      "airports": ["KIAH"],
       "advertised_start_time": "2025-05-24T23:00:00Z",
       "advertised_end_time": "2025-05-25T03:00:00Z"
     },
@@ -16,17 +12,8 @@
   {
     "event": {
       "name": "Rivers & Ranges FNO",
-      "artccs": [
-        "ZSE",
-        "ZLC"
-      ],
-      "airports": [
-        "KBOI",
-        "KGTF",
-        "KMSO",
-        "KPDX",
-        "KSEA"
-      ],
+      "artccs": ["ZSE", "ZLC"],
+      "airports": ["KBOI", "KGTF", "KMSO", "KPDX", "KSEA"],
       "advertised_start_time": "2025-05-30T23:00:00Z",
       "advertised_end_time": "2025-05-31T03:00:00Z"
     },
@@ -35,12 +22,8 @@
   {
     "event": {
       "name": "Orlando Overload 2025",
-      "artccs": [
-        "ZJX"
-      ],
-      "airports": [
-        "KMCO"
-      ],
+      "artccs": ["ZJX"],
+      "airports": ["KMCO"],
       "advertised_start_time": "2025-05-31T23:00:00Z",
       "advertised_end_time": "2025-06-01T03:00:00Z"
     },
@@ -49,12 +32,8 @@
   {
     "event": {
       "name": "ZDV Live 2025",
-      "artccs": [
-        "ZDV"
-      ],
-      "airports": [
-        "KDEN"
-      ],
+      "artccs": ["ZDV"],
+      "airports": ["KDEN"],
       "advertised_start_time": "2025-06-07T23:00:00Z",
       "advertised_end_time": "2025-06-08T03:00:00Z"
     },
@@ -63,15 +42,8 @@
   {
     "event": {
       "name": "Live from New York: It's Saturday Ops!",
-      "artccs": [
-        "ZNY"
-      ],
-      "airports": [
-        "KEWR",
-        "KJFK",
-        "KLGA",
-        "KPHL"
-      ],
+      "artccs": ["ZNY"],
+      "airports": ["KEWR", "KJFK", "KLGA", "KPHL"],
       "advertised_start_time": "2025-06-07T14:00:00Z",
       "advertised_end_time": "2025-06-07T21:00:00Z"
     },
@@ -80,14 +52,8 @@
   {
     "event": {
       "name": "Fourth of July Preparty",
-      "artccs": [
-        "ZDC"
-      ],
-      "airports": [
-        "KIAD",
-        "KDCA",
-        "KBWI"
-      ],
+      "artccs": ["ZDC"],
+      "airports": ["KIAD", "KDCA", "KBWI"],
       "advertised_start_time": "2025-06-13T23:00:00Z",
       "advertised_end_time": "2025-06-14T03:00:00Z"
     },
@@ -96,17 +62,8 @@
   {
     "event": {
       "name": "ZLA Live 2025",
-      "artccs": [
-        "ZLA"
-      ],
-      "airports": [
-        "KLAX",
-        "KSAN",
-        "KSNA",
-        "KBUR",
-        "KONT",
-        "KPSP"
-      ],
+      "artccs": ["ZLA"],
+      "airports": ["KLAX", "KSAN", "KSNA", "KBUR", "KONT", "KPSP"],
       "advertised_start_time": "2025-06-14T23:00:00Z",
       "advertised_end_time": "2025-06-15T03:00:00Z"
     },
@@ -115,13 +72,8 @@
   {
     "event": {
       "name": "ZFW Summer Simmer",
-      "artccs": [
-        "ZFW"
-      ],
-      "airports": [
-        "KDFW",
-        "KDAL"
-      ],
+      "artccs": ["ZFW"],
+      "airports": ["KDFW", "KDAL"],
       "advertised_start_time": "2025-06-21T23:00:00Z",
       "advertised_end_time": "2025-06-22T03:00:00Z"
     },
@@ -130,20 +82,8 @@
   {
     "event": {
       "name": "FNO Into FSExpo - Live from Providence, RI",
-      "artccs": [
-        "ZBW",
-        "ZNY",
-        "ZDC"
-      ],
-      "airports": [
-        "KPVD",
-        "KBOS",
-        "KDCA",
-        "KEWR",
-        "KIAD",
-        "KJFK",
-        "KLGA"
-      ],
+      "artccs": ["ZBW", "ZNY", "ZDC"],
+      "airports": ["KPVD", "KBOS", "KDCA", "KEWR", "KIAD", "KJFK", "KLGA"],
       "advertised_start_time": "2025-06-27T23:00:00Z",
       "advertised_end_time": "2025-06-28T03:00:00Z"
     },
@@ -152,12 +92,8 @@
   {
     "event": {
       "name": "Miami Midsummer Takeoff",
-      "artccs": [
-        "ZMA"
-      ],
-      "airports": [
-        "KMIA"
-      ],
+      "artccs": ["ZMA"],
+      "airports": ["KMIA"],
       "advertised_start_time": "2025-07-05T23:00:00Z",
       "advertised_end_time": "2025-07-06T03:00:00Z"
     },
@@ -166,12 +102,8 @@
   {
     "event": {
       "name": "ZSE Live 2025",
-      "artccs": [
-        "ZSE"
-      ],
-      "airports": [
-        "KSEA"
-      ],
+      "artccs": ["ZSE"],
+      "airports": ["KSEA"],
       "advertised_start_time": "2025-07-12T23:00:00Z",
       "advertised_end_time": "2025-07-13T03:00:00Z"
     },
@@ -180,16 +112,8 @@
   {
     "event": {
       "name": "Summer in the South",
-      "artccs": [
-        "ZHU",
-        "ZME",
-        "ZTL"
-      ],
-      "airports": [
-        "KMSY",
-        "KMEM",
-        "KCLT"
-      ],
+      "artccs": ["ZHU", "ZME", "ZTL"],
+      "airports": ["KMSY", "KMEM", "KCLT"],
       "advertised_start_time": "2025-07-18T23:00:00Z",
       "advertised_end_time": "2025-07-19T03:00:00Z"
     },
@@ -198,12 +122,8 @@
   {
     "event": {
       "name": "Northern Migration XX",
-      "artccs": [
-        "ZMP"
-      ],
-      "airports": [
-        "KMSP"
-      ],
+      "artccs": ["ZMP"],
+      "airports": ["KMSP"],
       "advertised_start_time": "2025-07-19T23:00:00Z",
       "advertised_end_time": "2025-07-20T03:00:00Z"
     },
@@ -212,12 +132,8 @@
   {
     "event": {
       "name": "The City in the Forest (Atlanta Live Event)",
-      "artccs": [
-        "ZTL"
-      ],
-      "airports": [
-        "KATL"
-      ],
+      "artccs": ["ZTL"],
+      "airports": ["KATL"],
       "advertised_start_time": "2025-07-26T22:00:00Z",
       "advertised_end_time": "2025-07-27T03:00:00Z"
     },
@@ -226,12 +142,8 @@
   {
     "event": {
       "name": "Tailgating for the Texans",
-      "artccs": [
-        "ZHU"
-      ],
-      "airports": [
-        "KIAH"
-      ],
+      "artccs": ["ZHU"],
+      "airports": ["KIAH"],
       "advertised_start_time": "2025-08-01T23:00:00Z",
       "advertised_end_time": "2025-08-02T03:00:00Z"
     },
@@ -240,14 +152,8 @@
   {
     "event": {
       "name": "Storm the Bay: ZOA Live 2025",
-      "artccs": [
-        "ZOA"
-      ],
-      "airports": [
-        "KSFO",
-        "KOAK",
-        "KSJC"
-      ],
+      "artccs": ["ZOA"],
+      "airports": ["KSFO", "KOAK", "KSJC"],
       "advertised_start_time": "2025-08-02T23:00:00Z",
       "advertised_end_time": "2025-08-03T03:00:00Z"
     },
@@ -256,15 +162,8 @@
   {
     "event": {
       "name": "Northwest to NorCal FNO",
-      "artccs": [
-        "ZOA",
-        "ZSE"
-      ],
-      "airports": [
-        "KRNO",
-        "KSMF",
-        "KSEA"
-      ],
+      "artccs": ["ZOA", "ZSE"],
+      "airports": ["KRNO", "KSMF", "KSEA"],
       "advertised_start_time": "2025-08-15T23:00:00Z",
       "advertised_end_time": "2025-08-16T03:00:00Z"
     },
@@ -273,15 +172,8 @@
   {
     "event": {
       "name": "30 Hours of EWR + Greetings From Miami Live",
-      "artccs": [
-        "ZNY",
-        "ZMA"
-      ],
-      "airports": [
-        "KEWR",
-        "KMIA",
-        "KFLL"
-      ],
+      "artccs": ["ZNY", "ZMA"],
+      "airports": ["KEWR", "KMIA", "KFLL"],
       "advertised_start_time": "2025-08-16T16:00:00Z",
       "advertised_end_time": "2025-08-16T21:00:00Z"
     },
@@ -290,12 +182,8 @@
   {
     "event": {
       "name": "Journey out of Detroit 3",
-      "artccs": [
-        "ZOB"
-      ],
-      "airports": [
-        "KDTW"
-      ],
+      "artccs": ["ZOB"],
+      "airports": ["KDTW"],
       "advertised_start_time": "2025-08-22T23:00:00Z",
       "advertised_end_time": "2025-08-23T00:00:00Z"
     },
@@ -304,9 +192,7 @@
   {
     "event": {
       "name": "ZHU's Wheel of Misfortune",
-      "artccs": [
-        "ZHU"
-      ],
+      "artccs": ["ZHU"],
       "airports": [
         "KIAH",
         "KHOU",
@@ -336,12 +222,8 @@
   {
     "event": {
       "name": "Ho'omaha",
-      "artccs": [
-        "ZHN"
-      ],
-      "airports": [
-        "PHNL"
-      ],
+      "artccs": ["ZHN"],
+      "airports": ["PHNL"],
       "advertised_start_time": "2025-08-30T21:00:00Z",
       "advertised_end_time": "2025-08-31T03:00:00Z"
     },
@@ -350,12 +232,8 @@
   {
     "event": {
       "name": "The Plane Train FNO",
-      "artccs": [
-        "ZTL"
-      ],
-      "airports": [
-        "KATL"
-      ],
+      "artccs": ["ZTL"],
+      "airports": ["KATL"],
       "advertised_start_time": "2025-09-05T23:00:00Z",
       "advertised_end_time": "2025-09-06T03:00:00Z"
     },
@@ -364,15 +242,8 @@
   {
     "event": {
       "name": "Rush to the Red Carpet FNO",
-      "artccs": [
-        "ZLA"
-      ],
-      "airports": [
-        "KLAX",
-        "KSAN",
-        "KBUR",
-        "KVNY"
-      ],
+      "artccs": ["ZLA"],
+      "airports": ["KLAX", "KSAN", "KBUR", "KVNY"],
       "advertised_start_time": "2025-09-12T23:00:00Z",
       "advertised_end_time": "2025-09-13T03:00:00Z"
     },
@@ -381,12 +252,8 @@
   {
     "event": {
       "name": "Metroplex Madness",
-      "artccs": [
-        "ZFW"
-      ],
-      "airports": [
-        "KDFW"
-      ],
+      "artccs": ["ZFW"],
+      "airports": ["KDFW"],
       "advertised_start_time": "2025-09-19T23:00:00Z",
       "advertised_end_time": "2025-09-20T03:00:00Z"
     },
@@ -395,14 +262,8 @@
   {
     "event": {
       "name": "The New York FNO: BaconEggCheese",
-      "artccs": [
-        "ZNY"
-      ],
-      "airports": [
-        "KEWR",
-        "KLGA",
-        "KJFK"
-      ],
+      "artccs": ["ZNY"],
+      "airports": ["KEWR", "KLGA", "KJFK"],
       "advertised_start_time": "2025-09-26T23:00:00Z",
       "advertised_end_time": "2025-09-27T03:00:00Z"
     },
@@ -411,12 +272,8 @@
   {
     "event": {
       "name": "The Seattle Salmon Run FNO",
-      "artccs": [
-        "ZSE"
-      ],
-      "airports": [
-        "KSEA"
-      ],
+      "artccs": ["ZSE"],
+      "airports": ["KSEA"],
       "advertised_start_time": "2025-09-26T23:00:00Z",
       "advertised_end_time": "2025-09-27T03:00:00Z"
     },
@@ -425,16 +282,8 @@
   {
     "event": {
       "name": "305 To Paradise",
-      "artccs": [
-        "ZMA",
-        "ZSU"
-      ],
-      "airports": [
-        "KMIA",
-        "TJSJ",
-        "TISX",
-        "TIST"
-      ],
+      "artccs": ["ZMA", "ZSU"],
+      "airports": ["KMIA", "TJSJ", "TISX", "TIST"],
       "advertised_start_time": "2025-09-27T23:00:00Z",
       "advertised_end_time": "2025-09-28T03:00:00Z"
     },
@@ -443,12 +292,8 @@
   {
     "event": {
       "name": "Nightmare on Colfax III",
-      "artccs": [
-        "ZDV"
-      ],
-      "airports": [
-        "KDEN"
-      ],
+      "artccs": ["ZDV"],
+      "airports": ["KDEN"],
       "advertised_start_time": "2025-10-17T23:00:00Z",
       "advertised_end_time": "2025-10-18T03:00:00Z"
     },
@@ -457,14 +302,8 @@
   {
     "event": {
       "name": "Live from Chicago 2025",
-      "artccs": [
-        "ZAU"
-      ],
-      "airports": [
-        "KORD",
-        "KMDW",
-        "KMKE"
-      ],
+      "artccs": ["ZAU"],
+      "airports": ["KORD", "KMDW", "KMKE"],
       "advertised_start_time": "2025-10-18T23:00:00Z",
       "advertised_end_time": "2025-10-19T03:00:00Z"
     },
@@ -473,16 +312,8 @@
   {
     "event": {
       "name": "Florida Night Ops",
-      "artccs": [
-        "ZMA",
-        "ZJX"
-      ],
-      "airports": [
-        "KMIA",
-        "KRSW",
-        "KMCO",
-        "KJAX"
-      ],
+      "artccs": ["ZMA", "ZJX"],
+      "airports": ["KMIA", "KRSW", "KMCO", "KJAX"],
       "advertised_start_time": "2025-10-24T23:00:00Z",
       "advertised_end_time": "2025-10-25T03:00:00Z"
     },
@@ -491,12 +322,8 @@
   {
     "event": {
       "name": "RNGRRs on the Runway",
-      "artccs": [
-        "ZNY"
-      ],
-      "airports": [
-        "KJFK"
-      ],
+      "artccs": ["ZNY"],
+      "airports": ["KJFK"],
       "advertised_start_time": "2025-10-25T23:00:00Z",
       "advertised_end_time": "2025-10-26T03:00:00Z"
     },
@@ -505,17 +332,21 @@
   {
     "event": {
       "name": "Trick or Bay Tracon",
-      "artccs": [
-        "ZOA"
-      ],
-      "airports": [
-        "KSFO",
-        "KOAK",
-        "KSJC"
-      ],
+      "artccs": ["ZOA"],
+      "airports": ["KSFO", "KOAK", "KSJC"],
       "advertised_start_time": "2025-10-26T23:00:00Z",
       "advertised_end_time": "2025-10-27T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-10-26-trick-or-bay-tracon.json"
+  },
+  {
+    "event": {
+      "name": "Never Dull at Dulles",
+      "artccs": ["ZDC"],
+      "airports": ["KIAD"],
+      "advertised_start_time": "2025-11-07T23:59:00Z",
+      "advertised_end_time": "2025-11-08T04:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-11-07-never-dull-at-dulles.json"
   }
 ]
