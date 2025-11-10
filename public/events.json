@@ -348,5 +348,15 @@
       "advertised_end_time": "2025-11-08T04:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-11-07-never-dull-at-dulles.json"
+  },
+  {
+    "event": {
+      "name": "Norcal Sunday",
+      "artccs": ["ZOA"],
+      "airports": ["KOAK", "KHWD"],
+      "advertised_start_time": "2025-11-09T23:59:00Z",
+      "advertised_end_time": "2025-11-10T03:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-11-09-norcal-sunday.json"
   }
 ]
