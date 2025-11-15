@@ -358,5 +358,15 @@
       "advertised_end_time": "2025-11-10T03:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-11-09-norcal-sunday.json"
+  },
+  {
+    "event": {
+      "name": "Nashville Nights, Charlotte Lights",
+      "artccs": ["ZME", "ZTL"],
+      "airports": ["KBNA", "KCLT"],
+      "advertised_start_time": "2025-11-14T23:59:00Z",
+      "advertised_end_time": "2025-11-15T04:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-11-14-nashville-nights-charlotte-lights.json"
   }
 ]
