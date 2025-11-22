@@ -368,5 +368,15 @@
       "advertised_end_time": "2025-11-15T04:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-11-14-nashville-nights-charlotte-lights.json"
+  },
+  {
+    "event": {
+      "name": "Stuff the Albu-Turkey",
+      "artccs": ["ZAB"],
+      "airports": ["KPHX", "KABQ"],
+      "advertised_start_time": "2025-11-21T23:59:00Z",
+      "advertised_end_time": "2025-11-22T04:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-11-21-stuff-the-albu-turkey.json"
   }
 ]
