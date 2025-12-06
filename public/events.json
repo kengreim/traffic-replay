@@ -378,5 +378,15 @@
       "advertised_end_time": "2025-11-22T04:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-11-21-stuff-the-albu-turkey.json"
+  },
+  {
+    "event": {
+      "name": "Cold Start FNO",
+      "artccs": ["ZBW", "ZDC", "ZNY"],
+      "airports": ["KBOS", "KIAD", "KDCA", "KJFK", "KEWR", "KLGA", "KPHL"],
+      "advertised_start_time": "2025-12-05T23:59:00Z",
+      "advertised_end_time": "2025-12-06T04:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-12-05-cold-start-fno.json"
   }
 ]
