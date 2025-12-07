@@ -388,5 +388,15 @@
       "advertised_end_time": "2025-12-06T04:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-12-05-cold-start-fno.json"
+  },
+  {
+    "event": {
+      "name": "Opposite Day in the Bay",
+      "artccs": ["ZOA"],
+      "airports": ["KSFO", "KOAK", "KSJC"],
+      "advertised_start_time": "2025-12-06T23:59:00Z",
+      "advertised_end_time": "2025-12-07T04:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-12-06-opposite-day-in-the-bay.json"
   }
 ]
