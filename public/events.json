@@ -398,5 +398,15 @@
       "advertised_end_time": "2025-12-07T04:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2025-12-06-opposite-day-in-the-bay.json"
+  },
+  {
+    "event": {
+      "name": "Houston-Mobay Fever",
+      "artccs": ["ZHU"],
+      "airports": ["KIAH", "KHOU", "MKJS"],
+      "advertised_start_time": "2025-12-13T23:59:00Z",
+      "advertised_end_time": "2025-12-14T04:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2025-12-13-houston-mobay-fever.json"
   }
 ]
