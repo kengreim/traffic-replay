@@ -5,3 +5,5 @@ backend/2025*
 /target
 .idea
 node_modules
+.env
+.claude
