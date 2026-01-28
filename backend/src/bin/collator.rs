@@ -160,6 +160,8 @@ async fn main() -> Result<(), anyhow::Error> {
     // Upload to R2 if configured
     if let Ok(r2_config) = R2Config::from_env() {
         upload_to_r2(&r2_config, &slug, json_bytes).await?;
+        fs::remove_dir_all(&output_dir)?;
+        info!(dir = %output_dir, "Cleaned up local output directory");
     } else {
         info!("R2 not configured, skipping upload");
     }
