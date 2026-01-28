@@ -16,7 +16,7 @@ tokio = { version = "1.49.0", features = ["rt", "rt-multi-thread", "macros", "ti
 chrono = { version = "0.4.43", features = ["serde"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["json", "env-filter"] }
-vatsim_utils = "0.6.0"
+vatsim_utils = { version = "0.6.0", default-features = false, features = ["rustls-tls"] }
 geo = "0.32.0"
 serde_json = "1.0.149"
 serde = { version = "1.0.228", features = ["derive"] }
