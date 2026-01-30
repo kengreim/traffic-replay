@@ -11,7 +11,8 @@ function getSlugFromEventUrl(eventUrl: string): string {
 export function EventAutoLoader() {
   const { slug } = useParams({ from: "/$slug" });
   const eventsMetadata = useStore((s) => s.eventsMetadata);
-  const setSelectedEventUrl = useStore((s) => s.setSelectedEventUrl);
+  const setCurrentEventUrl = useStore((s) => s.setCurrentEventUrl);
+  const setEventLoading = useStore((s) => s.setEventLoading);
   const setTrafficData = useStore((s) => s.setTrafficData);
   const setTimestamps = useStore((s) => s.setTimestamps);
   const setSliderIndex = useStore((s) => s.setSliderIndex);
@@ -24,11 +25,12 @@ export function EventAutoLoader() {
     if (!matched) return;
 
     const fetchEvent = async () => {
-      setSelectedEventUrl(matched.url);
+      setEventLoading(true);
       try {
         const response = await fetch(matched.url);
         if (response.ok) {
           const event = (await response.json()) as EventCapture;
+          setCurrentEventUrl(matched.url);
           setTrafficData(event.captures);
           const ts = Object.keys(event.captures).sort();
           setTimestamps(ts);
@@ -37,6 +39,8 @@ export function EventAutoLoader() {
         }
       } catch (error) {
         console.error("Failed to fetch event data:", error);
+      } finally {
+        setEventLoading(false);
       }
     };
 

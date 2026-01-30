@@ -51,9 +51,13 @@ interface PlaybackState {
 
 interface EventState {
   eventsMetadata: EventsMetadata;
-  selectedEventUrl: string;
+  currentEventUrl: string;
+  isEventDrawerOpen: boolean;
+  isEventLoading: boolean;
   setEventsMetadata: (metadata: EventsMetadata) => void;
-  setSelectedEventUrl: (url: string) => void;
+  setCurrentEventUrl: (url: string) => void;
+  setEventDrawerOpen: (open: boolean) => void;
+  setEventLoading: (loading: boolean) => void;
 }
 
 interface FilterState {
@@ -128,9 +132,13 @@ export const useStore = create<StoreState>()((set) => ({
 
   // Event state
   eventsMetadata: [],
-  selectedEventUrl: "",
+  currentEventUrl: "",
+  isEventDrawerOpen: false,
+  isEventLoading: false,
   setEventsMetadata: (eventsMetadata: EventsMetadata) => set({ eventsMetadata }),
-  setSelectedEventUrl: (selectedEventUrl: string) => set({ selectedEventUrl }),
+  setCurrentEventUrl: (currentEventUrl: string) => set({ currentEventUrl }),
+  setEventDrawerOpen: (isEventDrawerOpen: boolean) => set({ isEventDrawerOpen }),
+  setEventLoading: (isEventLoading: boolean) => set({ isEventLoading }),
 
   // Filter state
   hideSlowAircraft: false,

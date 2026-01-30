@@ -1,7 +1,7 @@
+import { useMemo } from "react";
 import { StyledCheckbox } from "./ui-core/Checkbox.tsx";
 import { PlusIcon, X } from "lucide-react";
 import { useStore } from "../store";
-import { useNavigate } from "@tanstack/react-router";
 import type { FormEvent } from "react";
 
 interface Route {
@@ -9,15 +9,10 @@ interface Route {
   departure: string;
 }
 
-function getSlugFromEventUrl(eventUrl: string): string {
-  const filename = eventUrl.split("/").pop() ?? "";
-  return filename.replace(/\.json$/, "");
-}
-
 export function Sidebar() {
   const {
-    selectedEventUrl,
-    setSelectedEventUrl,
+    setEventDrawerOpen,
+    currentEventUrl,
     eventsMetadata,
     callsign,
     setCallsign,
@@ -44,7 +39,10 @@ export function Sidebar() {
     removeRouteFilter,
   } = useStore();
 
-  const navigate = useNavigate();
+  const currentEvent = useMemo(() => {
+    if (!currentEventUrl) return null;
+    return eventsMetadata.find((e) => e.url === currentEventUrl)?.event ?? null;
+  }, [currentEventUrl, eventsMetadata]);
 
   const handleAddRouteFilter = (e: FormEvent) => {
     e.preventDefault();
@@ -71,33 +69,38 @@ export function Sidebar() {
         <div className="mb-2">
           <h2 className="text-xl">Event</h2>
         </div>
-        <div className="flex items-center space-x-2">
-          <select
-            id="event-select"
-            className="w-48 rounded bg-gray-700 px-2 py-1 text-sm text-white"
-            value={selectedEventUrl}
-            onChange={(e) => setSelectedEventUrl(e.target.value)}
-          >
-            <option value="" disabled hidden>
-              Choose event...
-            </option>
-            {eventsMetadata.map((event, index) => (
-              <option key={`${event.url}-${index}`} value={event.url}>
-                {event.event.name}
-              </option>
-            ))}
-          </select>
-          <button
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded bg-sky-600 transition-colors hover:bg-sky-500"
-            onClick={() => {
-              if (!selectedEventUrl) return;
-              const slug = getSlugFromEventUrl(selectedEventUrl);
-              navigate({ to: "/$slug", params: { slug } });
-            }}
-          >
-            Go
-          </button>
-        </div>
+        {currentEvent && (
+          <div className="flex max-w-56 flex-col space-y-1 rounded border border-slate-600 p-2 text-sm">
+            <p className="font-semibold">{currentEvent.name}</p>
+            <p className="text-slate-300">
+              <span className="text-slate-400">ARTCCs: </span>
+              {currentEvent.artccs.join(", ")}
+            </p>
+            <p className="text-slate-300">
+              <span className="text-slate-400">Airports: </span>
+              {currentEvent.airports.join(", ")}
+            </p>
+            <p className="text-slate-300">
+              <span className="text-slate-400">Start: </span>
+              {new Date(currentEvent.advertised_start_time).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hourCycle: "h23",
+                timeZone: "UTC",
+                timeZoneName: "short",
+              })}
+            </p>
+          </div>
+        )}
+        <button
+          className="cursor-pointer rounded bg-sky-600 px-4 py-2 text-sm font-medium transition-colors hover:bg-sky-500"
+          onClick={() => setEventDrawerOpen(true)}
+        >
+          {currentEvent ? "Change Event" : "Select Event"}
+        </button>
       </div>
 
       <div className="flex flex-col space-y-2">

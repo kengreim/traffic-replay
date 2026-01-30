@@ -10,6 +10,7 @@ import type { EventsMetadata, PilotProperties, TrafficData } from "./types/vatsi
 import { getAircraftIcon } from "./utils/icons.ts";
 import { Sidebar } from "./components/Sidebar.tsx";
 import { PlaybackBar } from "./components/PlaybackBar.tsx";
+import { EventDrawer } from "./components/EventDrawer.tsx";
 import { EVENTS_METADATA_URL, MAPBOX_ACCESS_TOKEN } from "./consts.ts";
 import { useStore } from "./store";
 
@@ -29,6 +30,7 @@ function App() {
     hideSlowAircraft,
     rings,
     ringsDistance,
+    isEventLoading,
   } = useStore();
 
   const showRings = useMemo(() => {
@@ -197,6 +199,14 @@ function App() {
           />
         </DeckGL>
         <PlaybackBar />
+        {isEventLoading && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50">
+            <div className="rounded-lg bg-slate-800 px-6 py-4 text-white shadow-lg">
+              Loading event...
+            </div>
+          </div>
+        )}
+        <EventDrawer />
       </div>
       <Outlet />
     </div>
