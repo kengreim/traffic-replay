@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import DeckGL from "@deck.gl/react";
 import { GeoJsonLayer, IconLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { Map } from "react-map-gl/mapbox";
+import { Outlet } from "@tanstack/react-router";
 import artccs from "./artccs.json";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { FeatureCollection, Feature, Point } from "geojson";
@@ -38,7 +39,6 @@ function App() {
   }, [rings]);
 
   useEffect(() => {
-    // Fetch events metadata
     const fetchEventsMetadata = async () => {
       try {
         const response = await fetch(EVENTS_METADATA_URL);
@@ -51,7 +51,7 @@ function App() {
       }
     };
 
-    fetchEventsMetadata().then(() => console.log("Event metadata fetched"));
+    fetchEventsMetadata();
   }, []);
 
   const currentData = useMemo(
@@ -198,6 +198,7 @@ function App() {
         </DeckGL>
         <PlaybackBar />
       </div>
+      <Outlet />
     </div>
   );
 }

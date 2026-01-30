@@ -1,12 +1,17 @@
 import { StyledCheckbox } from "./ui-core/Checkbox.tsx";
 import { PlusIcon, X } from "lucide-react";
 import { useStore } from "../store";
+import { useNavigate } from "@tanstack/react-router";
 import type { FormEvent } from "react";
-import type { EventCapture } from "../types/vatsim-capture";
 
 interface Route {
   arrival: string;
   departure: string;
+}
+
+function getSlugFromEventUrl(eventUrl: string): string {
+  const filename = eventUrl.split("/").pop() ?? "";
+  return filename.replace(/\.json$/, "");
 }
 
 export function Sidebar() {
@@ -14,9 +19,6 @@ export function Sidebar() {
     selectedEventUrl,
     setSelectedEventUrl,
     eventsMetadata,
-    setTrafficData,
-    setTimestamps,
-    setSliderIndex,
     callsign,
     setCallsign,
     speed,
@@ -40,24 +42,9 @@ export function Sidebar() {
     setNewDepartureAirport,
     addRouteFilter,
     removeRouteFilter,
-    stopPlayback,
   } = useStore();
 
-  const fetchEventData = async () => {
-    if (!selectedEventUrl) return;
-
-    const response = await fetch(selectedEventUrl);
-    if (response.ok) {
-      const event = (await response.json()) as EventCapture;
-      setTrafficData(event.captures);
-
-      // Extract timestamps from the data
-      const timestamps = Object.keys(event.captures).sort();
-      setTimestamps(timestamps);
-      setSliderIndex(0); // Reset slider position
-      stopPlayback();
-    }
-  };
+  const navigate = useNavigate();
 
   const handleAddRouteFilter = (e: FormEvent) => {
     e.preventDefault();
@@ -102,7 +89,11 @@ export function Sidebar() {
           </select>
           <button
             className="flex h-8 w-8 cursor-pointer items-center justify-center rounded bg-sky-600 transition-colors hover:bg-sky-500"
-            onClick={fetchEventData}
+            onClick={() => {
+              if (!selectedEventUrl) return;
+              const slug = getSlugFromEventUrl(selectedEventUrl);
+              navigate({ to: "/$slug", params: { slug } });
+            }}
           >
             Go
           </button>
