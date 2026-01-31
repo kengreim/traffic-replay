@@ -5,6 +5,7 @@ use aws_sdk_s3::primitives::ByteStream;
 use chrono::{DateTime, Utc};
 use figment::Figment;
 use figment::providers::{Format, Toml};
+use futures::TryStreamExt;
 use sqlx::PgPool;
 use std::collections::HashMap;
 use std::fs;
@@ -86,26 +87,28 @@ async fn main() -> Result<(), anyhow::Error> {
         "Querying datafeeds from database"
     );
 
-    let rows = sqlx::query_as::<_, (DateTime<Utc>, serde_json::Value)>(
+    let mut stream = sqlx::query_as::<_, (DateTime<Utc>, String)>(
         "SELECT update_timestamp, pilots FROM datafeeds WHERE update_timestamp BETWEEN $1 AND $2 ORDER BY update_timestamp",
     )
     .bind(query_start)
     .bind(query_end)
-    .fetch_all(&pool)
-    .await
-    .context("failed to query datafeeds from database")?;
-
-    info!(count = rows.len(), "Fetched datafeed rows from database");
+    .fetch(&pool);
 
     let mut all_snapshots = HashMap::new();
     let mut min_key: Option<String> = None;
     let mut max_key: Option<String> = None;
+    let mut row_count: usize = 0;
 
-    for (update_timestamp, pilots_json) in &rows {
-        let pilots: Vec<Pilot> = match serde_json::from_value(pilots_json.clone()) {
+    while let Some((update_timestamp, pilots_json)) = stream.try_next().await.context("failed to fetch datafeed row")? {
+        row_count += 1;
+        if row_count % 100 == 0 {
+            info!(rows_fetched = row_count, "Fetch progress");
+        }
+
+        let pilots: Vec<Pilot> = match serde_json::from_str(&pilots_json) {
             Ok(p) => p,
             Err(e) => {
-                warn!(error = ?e, time = %update_timestamp, "Could not deserialize pilots from JSONB");
+                warn!(error = ?e, time = %update_timestamp, "Could not deserialize pilots from JSON");
                 continue;
             }
         };
@@ -132,6 +135,8 @@ async fn main() -> Result<(), anyhow::Error> {
 
         all_snapshots.insert(key, collection);
     }
+
+    info!(total_rows = row_count, "Finished fetching all datafeed rows");
 
     let centroid = calculate_centroid(&airports);
     let captures_string = serde_json::to_string(&all_snapshots)?;

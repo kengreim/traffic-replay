@@ -90,7 +90,7 @@ async fn fetch_loop(api: &Vatsim, pool: &PgPool) {
             }
         };
 
-        let pilots_json = match serde_json::to_value(&latest_data.pilots) {
+        let pilots_json = match serde_json::to_string(&latest_data.pilots) {
             Ok(v) => v,
             Err(e) => {
                 warn!(error = ?e, "Could not serialize pilots to JSON");

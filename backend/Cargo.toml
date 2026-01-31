@@ -29,3 +29,4 @@ sqlx = { version = "0.8.6", features = ["runtime-tokio", "postgres", "chrono", "
 dotenvy = "0.15.7"
 aws-sdk-s3 = "1.120.0"
 aws-config = { version = "1.8.12", features = ["behavior-version-latest"] }
+futures = "0.3"
