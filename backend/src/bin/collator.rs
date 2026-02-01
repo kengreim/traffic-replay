@@ -117,7 +117,7 @@ async fn main() -> Result<(), anyhow::Error> {
             filter_pilots_by_distance_and_field(pilots, &airports, CAPTURE_RANGE_NM);
         let collection = pilots_to_feature_collection(filtered_pilots);
 
-        let key = update_timestamp.to_rfc3339();
+        let key = update_timestamp.format("%Y%m%d%H%M%S").to_string();
 
         if min_key
             .as_ref()
@@ -170,6 +170,19 @@ async fn main() -> Result<(), anyhow::Error> {
     } else {
         info!("R2 not configured, skipping upload");
     }
+
+    let events_json_entry = serde_json::json!({
+        "event": {
+            "name": event_config.name,
+            "artccs": event_config.artccs,
+            "airports": event_config.airports,
+            "advertised_start_time": event_config.advertised_start_time,
+            "advertised_end_time": event_config.advertised_end_time,
+        },
+        "url": format!("https://data.vatsim-replay.com/{slug}.json"),
+    });
+
+    println!("\nevents.json entry:\n{}\n", serde_json::to_string_pretty(&events_json_entry)?);
 
     Ok(())
 }
