@@ -468,5 +468,15 @@
       "advertised_end_time": "2026-01-31T04:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2026-01-30-northeast-corridor-fno.json"
+  },
+  {
+    "event": {
+      "name": "All Aboard the Brightline SNO",
+      "artccs": ["ZJX", "ZMA"],
+      "airports": ["KMCO", "KPBI", "KFLL", "KMIA"],
+      "advertised_start_time": "2026-01-31T23:59:00Z",
+      "advertised_end_time": "2026-02-01T04:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2026-01-31-all-aboard-the-brightline-sno.json"
   }
 ]
