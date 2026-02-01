@@ -36,8 +36,8 @@ export function PlaybackBar() {
 
   const timestampString = useMemo(() => {
     if (timestamps !== undefined && sliderIndex !== undefined && timestamps.length > 0) {
-      const s = timestamps[sliderIndex];
-      return `${s.substring(8, 10)}:${s.substring(10, 12)}:${s.substring(12, 14)}`;
+      const d = new Date(timestamps[sliderIndex]);
+      return d.toISOString().substring(11, 19);
     } else {
       return "";
     }
