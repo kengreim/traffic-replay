@@ -189,13 +189,7 @@ async fn main() -> Result<(), anyhow::Error> {
     }
 
     let events_json_entry = serde_json::json!({
-        "event": {
-            "name": event_config.name,
-            "artccs": event_config.artccs,
-            "airports": event_config.airports,
-            "advertised_start_time": event_config.advertised_start_time,
-            "advertised_end_time": event_config.advertised_end_time,
-        },
+        "event": event_config,
         "url": format!("https://data.vatsim-replay.com/{slug}.json"),
     });
 

@@ -95,7 +95,7 @@ pub struct EventConfig {
     pub name: String,
     pub artccs: Vec<String>,
     pub airports: Vec<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub custom_airports: HashMap<String, CustomAirport>,
     pub advertised_start_time: DateTime<Utc>,
     pub advertised_end_time: DateTime<Utc>,
