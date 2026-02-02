@@ -122,7 +122,7 @@ function App() {
     if (!historyTrails || timestamps.length === 0) {
       trailMapRef.current = new Map();
       trailLogRef.current = [];
-      prevSliderIndexRef.current = sliderIndex;
+      prevSliderIndexRef.current = 0;
       return [];
     }
 
