@@ -17,6 +17,7 @@ export function EventAutoLoader() {
   const setTimestamps = useStore((s) => s.setTimestamps);
   const setSliderIndex = useStore((s) => s.setSliderIndex);
   const stopPlayback = useStore((s) => s.stopPlayback);
+  const clearRouteFilters = useStore((s) => s.clearRouteFilters);
 
   useEffect(() => {
     if (!slug || eventsMetadata.length === 0) return;
@@ -36,6 +37,7 @@ export function EventAutoLoader() {
           setTimestamps(ts);
           setSliderIndex(0);
           stopPlayback();
+          clearRouteFilters();
         }
       } catch (error) {
         console.error("Failed to fetch event data:", error);

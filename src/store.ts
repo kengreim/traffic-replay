@@ -26,6 +26,7 @@ interface RouteFilterState {
   setNewDepartureAirport: (airport: string) => void;
   addRouteFilter: (filter: { arrival: string; departure: string }) => void;
   removeRouteFilter: (filter: { arrival: string; departure: string }) => void;
+  clearRouteFilters: () => void;
 }
 
 interface LabelState {
@@ -118,6 +119,7 @@ export const useStore = create<StoreState>()((set) => ({
     set((state: StoreState) => ({
       routeFilters: state.routeFilters.filter((r) => r !== filter),
     })),
+  clearRouteFilters: () => set({ routeFilters: [] }),
 
   // Label state
   callsign: true,
