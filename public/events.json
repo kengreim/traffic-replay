@@ -478,5 +478,25 @@
       "advertised_end_time": "2026-02-01T04:00:00Z"
     },
     "url": "https://data.vatsim-replay.com/2026-01-31-all-aboard-the-brightline-sno.json"
+  },
+  {
+    "event": {
+      "name": "[NON-SCHEDULED] DFW Scenery Release (Saturday)",
+      "artccs": ["ZFW"],
+      "airports": ["KDFW", "KDAL"],
+      "advertised_start_time": "2026-01-31T19:30:00Z",
+      "advertised_end_time": "2026-01-31T23:30:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2026-01-31-non-scheduled-dfw-scenery-release-saturday.json"
+  },
+  {
+    "event": {
+      "name": "[NON-SCHEDULED] DFW Scenery Release (Sunday)",
+      "artccs": ["ZFW"],
+      "airports": ["KDFW", "KDAL"],
+      "advertised_start_time": "2026-02-01T17:00:00Z",
+      "advertised_end_time": "2026-02-01T23:00:00Z"
+    },
+    "url": "https://data.vatsim-replay.com/2026-02-01-non-scheduled-dfw-scenery-release-sunday.json"
   }
 ]
