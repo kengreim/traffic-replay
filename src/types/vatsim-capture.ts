@@ -41,6 +41,7 @@ interface PilotProperties {
 }
 
 interface PilotData {
+  cid: number;
   name: string;
   callsign: string;
   latitude: number;

@@ -72,6 +72,13 @@ interface RingState {
   setRingsDistance: (distance: number) => void;
 }
 
+interface TrailState {
+  historyTrails: CheckedState;
+  showDisconnected: CheckedState;
+  setHistoryTrails: (state: CheckedState) => void;
+  setShowDisconnected: (state: CheckedState) => void;
+}
+
 type StoreState = ViewportState &
   TrafficState &
   RouteFilterState &
@@ -79,7 +86,8 @@ type StoreState = ViewportState &
   PlaybackState &
   EventState &
   FilterState &
-  RingState;
+  RingState &
+  TrailState;
 
 export const useStore = create<StoreState>()((set) => ({
   // Viewport state
@@ -149,4 +157,10 @@ export const useStore = create<StoreState>()((set) => ({
   ringsDistance: 3,
   setRings: (rings: CheckedState) => set({ rings }),
   setRingsDistance: (ringsDistance: number) => set({ ringsDistance }),
+
+  // Trail state
+  historyTrails: false,
+  showDisconnected: false,
+  setHistoryTrails: (historyTrails: CheckedState) => set({ historyTrails }),
+  setShowDisconnected: (showDisconnected: CheckedState) => set({ showDisconnected }),
 }));

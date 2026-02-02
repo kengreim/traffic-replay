@@ -30,6 +30,10 @@ export function Sidebar() {
     setRingsDistance,
     hideSlowAircraft,
     setHideSlowAircraft,
+    historyTrails,
+    setHistoryTrails,
+    showDisconnected,
+    setShowDisconnected,
     routeFilters,
     newArrivalAirport,
     setNewArrivalAirport,
@@ -163,6 +167,28 @@ export function Sidebar() {
                 />
                 <p>Radius (nm)</p>
               </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col space-y-2">
+        <div>
+          <div className="mb-2">
+            <h2 className="text-xl">History Trails</h2>
+          </div>
+          <div className="flex flex-col space-y-2 rounded border border-slate-600 p-2">
+            <StyledCheckbox
+              label="Show history trails"
+              checked={historyTrails}
+              onCheckedChange={(checked) => setHistoryTrails(checked)}
+            />
+            {historyTrails && (
+              <StyledCheckbox
+                label="Include disconnected"
+                checked={showDisconnected}
+                onCheckedChange={(checked) => setShowDisconnected(checked)}
+              />
             )}
           </div>
         </div>

@@ -1,7 +1,7 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import DeckGL from "@deck.gl/react";
-import { GeoJsonLayer, IconLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
-import { Map } from "react-map-gl/mapbox";
+import { GeoJsonLayer, IconLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
+import { Map as MapboxMap } from "react-map-gl/mapbox";
 import { Outlet } from "@tanstack/react-router";
 import artccs from "./artccs.json";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -31,6 +31,8 @@ function App() {
     rings,
     ringsDistance,
     isEventLoading,
+    historyTrails,
+    showDisconnected,
   } = useStore();
 
   const showRings = useMemo(() => {
@@ -99,7 +101,138 @@ function App() {
     };
   }, [currentData, routeFilters, hideSlowAircraft]);
 
+  // History trail types and refs
+  interface TrailEntry {
+    path: [number, number][];
+    flightPlan: { departure: string; arrival: string } | null;
+  }
+
+  const trailMapRef = useRef<Map<string, TrailEntry>>(new Map());
+  const trailLogRef = useRef<string[][]>([]);
+  const prevSliderIndexRef = useRef<number>(0);
+
+  // Reset trails when a new event is loaded
+  useEffect(() => {
+    trailMapRef.current = new Map();
+    trailLogRef.current = [];
+    prevSliderIndexRef.current = 0;
+  }, [trafficData]);
+
+  const trailPaths = useMemo(() => {
+    if (!historyTrails || timestamps.length === 0) {
+      trailMapRef.current = new Map();
+      trailLogRef.current = [];
+      prevSliderIndexRef.current = sliderIndex;
+      return [];
+    }
+
+    const trailMap = trailMapRef.current;
+    const trailLog = trailLogRef.current;
+    const prevIndex = prevSliderIndexRef.current;
+
+    if (prevIndex < sliderIndex) {
+      // Forward: append positions for each timestamp we moved past
+      for (let i = prevIndex + 1; i <= sliderIndex; i++) {
+        const tsData = (trafficData as TrafficData)[timestamps[i]];
+        const keysAtStep: string[] = [];
+        if (tsData) {
+          for (const feature of tsData.features) {
+            const data = feature.properties?.data;
+            if (!data?.callsign) continue;
+            const key = `${data.cid}-${data.callsign}`;
+            let entry = trailMap.get(key);
+            if (!entry) {
+              entry = {
+                path: [],
+                flightPlan: data.flight_plan
+                  ? { departure: data.flight_plan.departure, arrival: data.flight_plan.arrival }
+                  : null,
+              };
+              trailMap.set(key, entry);
+            }
+            entry.path.push([data.longitude, data.latitude]);
+            keysAtStep.push(key);
+          }
+        }
+        trailLog[i] = keysAtStep;
+      }
+    } else if (prevIndex > sliderIndex) {
+      // Backward: remove positions for each timestamp we reversed past
+      for (let i = prevIndex; i > sliderIndex; i--) {
+        const keysAtStep = trailLog[i];
+        if (keysAtStep) {
+          for (const key of keysAtStep) {
+            const entry = trailMap.get(key);
+            if (entry) {
+              entry.path.pop();
+              if (entry.path.length === 0) {
+                trailMap.delete(key);
+              }
+            }
+          }
+        }
+      }
+      trailLog.length = sliderIndex + 1;
+    }
+
+    prevSliderIndexRef.current = sliderIndex;
+
+    // Check if a trail's flight plan matches the active route filters
+    const matchesRouteFilters = (fp: { departure: string; arrival: string } | null): boolean => {
+      if (routeFilters.length === 0) return true;
+      if (!fp) return false;
+      for (const filter of routeFilters) {
+        if (
+          (filter.arrival === "*" || filter.arrival === fp.arrival) &&
+          (filter.departure === "*" || filter.departure === fp.departure)
+        ) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // Build set of currently visible trail keys from currentData (route filters only, not ground speed)
+    const visibleKeys = new Set<string>();
+    if (currentData?.features) {
+      for (const feature of currentData.features) {
+        const data = feature.properties?.data;
+        if (!data?.callsign) continue;
+        if (!matchesRouteFilters(data.flight_plan ? { departure: data.flight_plan.departure, arrival: data.flight_plan.arrival } : null)) continue;
+        visibleKeys.add(`${data.cid}-${data.callsign}`);
+      }
+    }
+
+    const result: { key: string; path: [number, number][] }[] = [];
+    for (const [key, entry] of trailMap) {
+      if (entry.path.length < 2) continue;
+      if (showDisconnected) {
+        // Show all trails that match route filters
+        if (matchesRouteFilters(entry.flightPlan)) {
+          result.push({ key, path: entry.path });
+        }
+      } else {
+        // Only show trails for currently visible aircraft
+        if (visibleKeys.has(key)) {
+          result.push({ key, path: entry.path });
+        }
+      }
+    }
+    return result;
+  }, [sliderIndex, timestamps, trafficData, historyTrails, currentData, showDisconnected, routeFilters]);
+
   const layers = [
+    new PathLayer({
+      id: "trail-layer",
+      data: trailPaths,
+      getPath: (d: { key: string; path: [number, number][] }) => d.path,
+      getColor: [255, 140, 0, 180],
+      getWidth: 2,
+      widthMinPixels: 1,
+      widthMaxPixels: 3,
+      billboard: false,
+      visible: !!historyTrails,
+    }),
     new IconLayer({
       id: "aircraft-layer",
       data: filteredData?.features ?? [],
@@ -192,7 +325,7 @@ function App() {
       <Sidebar />
       <div style={{ flex: 1, position: "relative" }}>
         <DeckGL initialViewState={viewport} controller={true} layers={layers}>
-          <Map
+          <MapboxMap
             mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
             mapStyle="mapbox://styles/mapbox/light-v11"
             projection="mercator"
