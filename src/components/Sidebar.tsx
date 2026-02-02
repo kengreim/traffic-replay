@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { StyledCheckbox } from "./ui-core/Checkbox.tsx";
-import { PanelLeftClose, PanelLeftOpen, PlusIcon, X } from "lucide-react";
+import { Github, PanelLeftClose, PanelLeftOpen, PlusIcon, X } from "lucide-react";
 import { useStore } from "../store";
 import type { FormEvent } from "react";
 
@@ -58,9 +58,7 @@ export function Sidebar() {
         arrival: newArrivalAirport.toUpperCase(),
         departure: newDepartureAirport.toUpperCase(),
       };
-      if (!routeFilters.includes(filter)) {
-        addRouteFilter(filter);
-      }
+      addRouteFilter(filter);
     }
   };
 
@@ -300,6 +298,26 @@ export function Sidebar() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="mt-auto flex flex-col items-center space-y-1 pt-4">
+          <a
+            href="https://github.com/kengreim/traffic-replay"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors hover:text-slate-300"
+            title="GitHub"
+          >
+            <Github size={20} />
+          </a>
+          <a
+            href="https://github.com/kengreim/traffic-replay/issues/new"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-slate-400 transition-colors hover:text-slate-300"
+          >
+            Found a bug? Report it!
+          </a>
         </div>
       </div>
     </div>

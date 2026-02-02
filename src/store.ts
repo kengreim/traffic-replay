@@ -90,6 +90,11 @@ type StoreState = ViewportState &
   RingState &
   TrailState;
 
+const sameRouteFilter = (
+  a: { arrival: string; departure: string },
+  b: { arrival: string; departure: string },
+) => a.arrival === b.arrival && a.departure === b.departure;
+
 export const useStore = create<StoreState>()((set) => ({
   // Viewport state
   viewport: DEFAULT_VIEWPORT,
@@ -111,13 +116,15 @@ export const useStore = create<StoreState>()((set) => ({
   setNewDepartureAirport: (newDepartureAirport: string) => set({ newDepartureAirport }),
   addRouteFilter: (filter: { arrival: string; departure: string }) =>
     set((state: StoreState) => ({
-      routeFilters: [...state.routeFilters, filter],
+      routeFilters: state.routeFilters.some((r) => sameRouteFilter(r, filter))
+        ? state.routeFilters
+        : [...state.routeFilters, filter],
       newArrivalAirport: "",
       newDepartureAirport: "",
     })),
   removeRouteFilter: (filter: { arrival: string; departure: string }) =>
     set((state: StoreState) => ({
-      routeFilters: state.routeFilters.filter((r) => r !== filter),
+      routeFilters: state.routeFilters.filter((r) => !sameRouteFilter(r, filter)),
     })),
   clearRouteFilters: () => set({ routeFilters: [] }),
 
