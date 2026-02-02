@@ -85,10 +85,18 @@ impl From<vatsim_utils::models::FlightPlan> for FlightPlan {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct CustomAirport {
+    pub latitude: f64,
+    pub longitude: f64,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct EventConfig {
     pub name: String,
     pub artccs: Vec<String>,
     pub airports: Vec<String>,
+    #[serde(default)]
+    pub custom_airports: HashMap<String, CustomAirport>,
     pub advertised_start_time: DateTime<Utc>,
     pub advertised_end_time: DateTime<Utc>,
 }
@@ -120,7 +128,7 @@ pub struct AirportRecord {
 #[derive(Debug)]
 pub struct Airport {
     #[allow(dead_code)]
-    pub faa_id: String,
+    pub faa_id: Option<String>,
     pub icao_id: String,
     pub point: Point,
 }
@@ -128,7 +136,7 @@ pub struct Airport {
 impl From<AirportRecord> for Airport {
     fn from(record: AirportRecord) -> Self {
         Self {
-            faa_id: record.faa_id,
+            faa_id: Some(record.faa_id),
             icao_id: record.icao_id,
             point: Point::new(record.longitude, record.latitude),
         }

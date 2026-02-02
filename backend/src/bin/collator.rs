@@ -66,13 +66,30 @@ async fn main() -> Result<(), anyhow::Error> {
         bail!("advertised end time cannot be before advertised start time");
     }
 
+    let mut custom_airport_storage: Vec<Airport> = vec![];
     let mut airports: Vec<(String, Option<&Airport>)> = vec![];
     for icao_id in &event_config.airports {
         if let Some(airport) = all_airports.get(icao_id) {
             airports.push((icao_id.clone(), Some(airport)));
-        } else {
-            warn!(id = ?icao_id, "invalid airport ICAO id, not found in FAA data");
+        } else if let Some(custom) = event_config.custom_airports.get(icao_id) {
+            info!(id = ?icao_id, lat = custom.latitude, lon = custom.longitude, "using custom airport coordinates");
+            custom_airport_storage.push(Airport {
+                faa_id: None,
+                icao_id: icao_id.clone(),
+                point: geo::Point::new(custom.longitude, custom.latitude),
+            });
             airports.push((icao_id.clone(), None));
+        } else {
+            warn!(id = ?icao_id, "airport not found in FAA data or custom airports, using route-based matching only");
+            airports.push((icao_id.clone(), None));
+        }
+    }
+    // Patch in custom airport references now that storage is stable
+    for (icao_id, airport_ref) in &mut airports {
+        if airport_ref.is_none() {
+            if let Some(custom) = custom_airport_storage.iter().find(|a| &a.icao_id == icao_id) {
+                *airport_ref = Some(custom);
+            }
         }
     }
 
