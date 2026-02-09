@@ -83,7 +83,7 @@ export function Sidebar() {
       </button>
       {/* Sidebar content — slides in/out */}
       <div
-        className="flex min-h-full min-w-[262px] flex-col space-y-5 overflow-y-auto overscroll-contain p-6 transition-[transform,opacity] duration-300 ease-in-out"
+        className="flex h-full min-w-[262px] flex-col space-y-5 overflow-y-auto overscroll-contain p-6 transition-[transform,opacity] duration-300 ease-in-out"
         style={{
           transform: collapsed ? "translateX(-100%)" : "translateX(0)",
           opacity: collapsed ? 0 : 1,
