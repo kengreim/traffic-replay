@@ -321,7 +321,7 @@ function App() {
   ];
 
   return (
-    <div className="min-w-dvw font-manrope flex min-h-dvh">
+    <div className="min-w-dvw font-manrope flex h-dvh">
       <Sidebar />
       <div style={{ flex: 1, position: "relative" }}>
         <DeckGL initialViewState={viewport} controller={true} layers={layers}>
