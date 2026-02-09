@@ -64,7 +64,7 @@ export function PlaybackBar() {
   }, [isPlaying, playbackSpeed, incrementTimeSlider, togglePlayback]);
 
   return (
-    <div className="absolute bottom-5 w-full p-5">
+    <div className="absolute bottom-5 z-20 w-full p-5">
       {Object.keys(trafficData).length > 0 && (
         <div className="flex items-end rounded bg-neutral-50/90 px-5 py-2 shadow">
           <div className="flex flex-col items-center">
