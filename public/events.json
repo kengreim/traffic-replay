@@ -508,5 +508,15 @@
       "name": "Hail Mary in the Bay"
     },
     "url": "https://data.vatsim-replay.com/2026-02-07-hail-mary-in-the-bay.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-02-14T04:00:00Z",
+      "advertised_start_time": "2026-02-13T23:59:00Z",
+      "airports": ["KDFW", "KDAL"],
+      "artccs": ["ZFW"],
+      "name": "Feel the Love FNO"
+    },
+    "url": "https://data.vatsim-replay.com/2026-02-13-feel-the-love-fno.json"
   }
 ]
