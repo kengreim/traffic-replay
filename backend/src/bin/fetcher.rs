@@ -2,13 +2,56 @@
 
 use anyhow::Context;
 use chrono::DateTime;
+use rand::seq::IndexedRandom;
+use reqwest::Client;
+use serde::Deserialize;
 use sqlx::PgPool;
 use std::cmp::min;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tracing::{debug, error, info, warn};
 use tracing_subscriber::fmt::format::FmtSpan;
-use vatsim_utils::live_api::Vatsim;
+use vatsim_utils::models::Pilot;
+
+#[derive(Deserialize)]
+struct StatusData {
+    v3: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct GeneralData {
+    update: String,
+    update_timestamp: String,
+}
+
+#[derive(Deserialize)]
+struct V3ResponseData {
+    general: GeneralData,
+    pilots: Vec<Pilot>,
+}
+
+async fn get_v3_urls(client: &Client) -> Result<Vec<String>, anyhow::Error> {
+    let status: StatusData = client
+        .get("https://status.vatsim.net/status.json")
+        .send()
+        .await?
+        .json()
+        .await?;
+    anyhow::ensure!(!status.v3.is_empty(), "No V3 URLs returned from status endpoint");
+    Ok(status.v3)
+}
+
+async fn fetch_v3_data(client: &Client, url: &str) -> Result<V3ResponseData, anyhow::Error> {
+    let data: V3ResponseData = client
+        .get(url)
+        .header("Cache-Control", "no-cache")
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+    Ok(data)
+}
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -41,31 +84,38 @@ async fn main() -> Result<(), anyhow::Error> {
 
     info!("Migrations applied");
 
-    let api = Vatsim::new()
-        .await
-        .map_err(|e| anyhow::anyhow!("{e}"))
-        .context("failed to initialize VATSIM API")?;
+    let client = Client::builder()
+        .user_agent("traffic-replay-fetcher")
+        .build()
+        .context("failed to build HTTP client")?;
 
-    info!("VATSIM API initialized");
+    let v3_urls = get_v3_urls(&client)
+        .await
+        .context("failed to fetch VATSIM status")?;
+
+    info!(mirrors = v3_urls.len(), "VATSIM API initialized");
 
     let cleanup_pool = pool.clone();
     tokio::spawn(async move {
         cleanup_loop(&cleanup_pool).await;
     });
 
-    fetch_loop(&api, &pool).await;
+    fetch_loop(&client, &v3_urls, &pool).await;
 
     Ok(())
 }
 
-async fn fetch_loop(api: &Vatsim, pool: &PgPool) {
+async fn fetch_loop(client: &Client, v3_urls: &[String], pool: &PgPool) {
     let mut last_datafeed_update = String::new();
+    let mut rng = rand::rng();
 
     info!("Starting datafeed fetch loop");
     loop {
         let start = Instant::now();
 
-        let latest_data = match api.get_v3_data().await {
+        let url = v3_urls.choose(&mut rng).expect("v3_urls is non-empty");
+
+        let latest_data = match fetch_v3_data(client, url).await {
             Ok(data) => data,
             Err(e) => {
                 warn!(error = ?e, "Could not fetch VATSIM data");

@@ -17,6 +17,8 @@ chrono = { version = "0.4.43", features = ["serde"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["json", "env-filter"] }
 vatsim_utils = { version = "0.6.0", default-features = false, features = ["rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+rand = "0.9"
 geo = "0.32.0"
 serde_json = "1.0.149"
 serde = { version = "1.0.228", features = ["derive"] }
