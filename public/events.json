@@ -518,5 +518,20 @@
       "name": "Feel the Love FNO"
     },
     "url": "https://data.vatsim-replay.com/2026-02-13-feel-the-love-fno.json"
-  }
+  },
+  {
+  "event": {
+    "advertised_end_time": "2026-02-16T04:00:00Z",
+    "advertised_start_time": "2026-02-15T23:59:00Z",
+    "airports": [
+      "KTPA"
+    ],
+    "artccs": [
+      "ZMA"
+    ],
+    "name": "West Coast with Love"
+  },
+  "url": "https://data.vatsim-replay.com/2026-02-15-west-coast-with-love.json"
+}
+
 ]
