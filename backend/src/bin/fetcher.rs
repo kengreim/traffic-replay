@@ -15,6 +15,11 @@ use vatsim_utils::models::Pilot;
 
 #[derive(Deserialize)]
 struct StatusData {
+    data: StatusEndpoints,
+}
+
+#[derive(Deserialize)]
+struct StatusEndpoints {
     v3: Vec<String>,
 }
 
@@ -37,8 +42,8 @@ async fn get_v3_urls(client: &Client) -> Result<Vec<String>, anyhow::Error> {
         .await?
         .json()
         .await?;
-    anyhow::ensure!(!status.v3.is_empty(), "No V3 URLs returned from status endpoint");
-    Ok(status.v3)
+    anyhow::ensure!(!status.data.v3.is_empty(), "No V3 URLs returned from status endpoint");
+    Ok(status.data.v3)
 }
 
 async fn fetch_v3_data(client: &Client, url: &str) -> Result<V3ResponseData, anyhow::Error> {
