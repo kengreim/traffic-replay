@@ -5,6 +5,8 @@ use aws_sdk_s3::primitives::ByteStream;
 use chrono::{DateTime, Utc};
 use figment::Figment;
 use figment::providers::{Format, Toml};
+use flate2::Compression;
+use flate2::write::GzEncoder;
 use futures::TryStreamExt;
 use sqlx::PgPool;
 use std::collections::HashMap;
@@ -16,10 +18,26 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use vatsim_utils::models::Pilot;
 
 use traffic_replay::{
-    Airport, CAPTURE_RANGE_NM, EVENT_POST_TIME_MINUTES, EVENT_PRE_TIME_MINUTES, EventCapture,
-    EventConfig, calculate_centroid, event_slug, filter_pilots_by_distance_and_field,
-    load_airports, pilots_to_feature_collection,
+    Airport, CAPTURE_RANGE_NM, EVENT_POST_TIME_MINUTES, EVENT_PRE_TIME_MINUTES, FlightPlan,
+    OptimizedEventCapture, EventConfig, PilotStatic, calculate_centroid, event_slug,
+    filter_pilots_by_distance_and_field, load_airports, pilots_to_optimized_feature_collection,
 };
+
+#[derive(Default)]
+struct CountingWriter {
+    bytes: usize,
+}
+
+impl Write for CountingWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.bytes += buf.len();
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -111,7 +129,10 @@ async fn main() -> Result<(), anyhow::Error> {
     .bind(query_end)
     .fetch(&pool);
 
-    let mut all_snapshots = HashMap::new();
+    // Shared lookups for optimized format
+    let mut pilots_static: HashMap<String, PilotStatic> = HashMap::new();
+    let mut flight_plans: HashMap<String, FlightPlan> = HashMap::new();
+    let mut all_frames = HashMap::new();
     let mut min_key: Option<String> = None;
     let mut max_key: Option<String> = None;
     let mut row_count: usize = 0;
@@ -132,7 +153,11 @@ async fn main() -> Result<(), anyhow::Error> {
 
         let filtered_pilots =
             filter_pilots_by_distance_and_field(pilots, &airports, CAPTURE_RANGE_NM);
-        let collection = pilots_to_feature_collection(filtered_pilots);
+        let collection = pilots_to_optimized_feature_collection(
+            filtered_pilots,
+            &mut pilots_static,
+            &mut flight_plans,
+        );
 
         let key = update_timestamp.format("%Y%m%d%H%M%S").to_string();
 
@@ -150,21 +175,29 @@ async fn main() -> Result<(), anyhow::Error> {
             max_key = Some(key.clone());
         }
 
-        all_snapshots.insert(key, collection);
+        all_frames.insert(key, collection);
     }
 
     info!(total_rows = row_count, "Finished fetching all datafeed rows");
+    info!(
+        pilots = pilots_static.len(),
+        flight_plans = flight_plans.len(),
+        "Deduplicated static data"
+    );
 
     let centroid = calculate_centroid(&airports);
-    let captures_string = serde_json::to_string(&all_snapshots)?;
-    let captures_len = captures_string.len();
+    let mut counter = CountingWriter::default();
+    serde_json::to_writer(&mut counter, &all_frames)?;
+    let frames_len = counter.bytes;
 
-    let capture = EventCapture {
+    let capture = OptimizedEventCapture {
         config: event_config.clone(),
         first_timestamp_key: min_key,
         last_timestamp_key: max_key,
-        captures: all_snapshots,
-        captures_length_bytes: captures_len,
+        pilots: pilots_static,
+        flight_plans,
+        frames: all_frames,
+        captures_length_bytes: frames_len,
         viewport_center: centroid,
     };
 
@@ -173,15 +206,29 @@ async fn main() -> Result<(), anyhow::Error> {
     fs::create_dir_all(&output_dir)?;
 
     let json_bytes = serde_json::to_vec(&capture)?;
-    let output_file = format!("{output_dir}/{slug}.json");
+
+    // Gzip compress the JSON
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(&json_bytes)?;
+    let gzipped_bytes = encoder.finish()?;
+
+    info!(
+        uncompressed = json_bytes.len(),
+        compressed = gzipped_bytes.len(),
+        ratio = format!("{:.1}x", json_bytes.len() as f64 / gzipped_bytes.len() as f64),
+        "Compression stats"
+    );
+
+    // Write gzipped file locally (with .gz extension for clarity)
+    let output_file = format!("{output_dir}/{slug}.json.gz");
     let mut file = fs::File::create(&output_file)?;
-    file.write_all(&json_bytes)?;
+    file.write_all(&gzipped_bytes)?;
 
     info!(file = %output_file, "Completed collation, output written locally");
 
     // Upload to R2 if configured
     if let Ok(r2_config) = R2Config::from_env() {
-        upload_to_r2(&r2_config, &slug, json_bytes).await?;
+        upload_to_r2(&r2_config, &slug, gzipped_bytes).await?;
         fs::remove_dir_all(&output_dir)?;
         info!(dir = %output_dir, "Cleaned up local output directory");
     } else {
@@ -212,7 +259,7 @@ impl R2Config {
     }
 }
 
-async fn upload_to_r2(config: &R2Config, slug: &str, data: Vec<u8>) -> Result<(), anyhow::Error> {
+async fn upload_to_r2(config: &R2Config, slug: &str, gzipped_data: Vec<u8>) -> Result<(), anyhow::Error> {
     let sdk_config = aws_config::from_env()
         .endpoint_url(&config.endpoint_url)
         .region(aws_config::Region::new("auto"))
@@ -222,14 +269,15 @@ async fn upload_to_r2(config: &R2Config, slug: &str, data: Vec<u8>) -> Result<()
     let client = aws_sdk_s3::Client::new(&sdk_config);
     let key = format!("{slug}.json");
 
-    info!(bucket = %config.bucket, key = %key, "Uploading to R2");
+    info!(bucket = %config.bucket, key = %key, size = gzipped_data.len(), "Uploading gzipped data to R2");
 
     client
         .put_object()
         .bucket(&config.bucket)
         .key(&key)
-        .body(ByteStream::from(data))
+        .body(ByteStream::from(gzipped_data))
         .content_type("application/json")
+        .content_encoding("gzip")
         .send()
         .await
         .context("failed to upload to R2")?;

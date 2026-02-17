@@ -1,6 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
-use anyhow::{anyhow, bail};
+use anyhow::{Context, anyhow, bail};
 use chrono::{DateTime, Datelike, Utc};
 use geo::{BoundingRect, Distance, Haversine, MultiPolygon, Point, Polygon, Rect, unary_union};
 use geojson::feature::Id;
@@ -10,6 +10,7 @@ use slug::slugify;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
+use std::path::PathBuf;
 use tracing::{debug, instrument, warn};
 use vatsim_utils::models::Pilot;
 
@@ -34,7 +35,30 @@ pub struct PilotData {
     pub last_updated: String,
 }
 
+/// Static pilot data that doesn't change during a flight (used in optimized format)
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct PilotStatic {
+    pub name: String,
+    pub callsign: String,
+}
+
+/// Dynamic pilot data per frame with flight plan reference (used in optimized format)
 #[derive(Deserialize, Serialize)]
+pub struct PilotDynamic {
+    pub cid: u64,
+    pub latitude: f64,
+    pub longitude: f64,
+    pub altitude: i64,
+    pub groundspeed: i64,
+    pub transponder: String,
+    pub heading: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fp: Option<String>,
+    pub logon_time: String,
+    pub last_updated: String,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct FlightPlan {
     pub flight_rules: String,
     pub aircraft: String,
@@ -113,6 +137,25 @@ pub struct EventCapture {
     pub viewport_center: Point<f64>,
 }
 
+/// Optimized event capture format with deduplicated flight plans and static pilot data
+#[derive(Serialize, Debug)]
+pub struct OptimizedEventCapture {
+    pub config: EventConfig,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub first_timestamp_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_timestamp_key: Option<String>,
+    /// Static pilot data (name, callsign) keyed by CID
+    pub pilots: HashMap<String, PilotStatic>,
+    /// Deduplicated flight plans keyed by "{callsign}_{cid}_{revision_id}"
+    #[serde(rename = "flightPlans")]
+    pub flight_plans: HashMap<String, FlightPlan>,
+    /// GeoJSON FeatureCollections per timestamp with flight plan references
+    pub frames: HashMap<String, FeatureCollection>,
+    pub captures_length_bytes: usize,
+    pub viewport_center: Point<f64>,
+}
+
 #[derive(Debug, serde::Deserialize)]
 pub struct AirportRecord {
     #[serde(rename = "ARPT_ID")]
@@ -150,7 +193,22 @@ pub fn load_airports() -> Result<HashMap<IcaoId, Airport>, anyhow::Error> {
     debug!("loading airports from file");
     let mut airports = HashMap::new();
 
-    let csv_file = File::open("./APT_BASE.csv")?;
+    let csv_path = std::env::current_exe()
+        .ok()
+        .and_then(|path| path.parent().map(|dir| dir.join("APT_BASE.csv")))
+        .unwrap_or_else(|| PathBuf::from("./APT_BASE.csv"));
+    let csv_file = match File::open(&csv_path) {
+        Ok(file) => file,
+        Err(err) => {
+            warn!(
+                error = ?err,
+                path = %csv_path.display(),
+                "failed to open airports CSV relative to executable, falling back to ./APT_BASE.csv"
+            );
+            File::open("./APT_BASE.csv")
+                .with_context(|| "failed to open airports CSV at ./APT_BASE.csv")?
+        }
+    };
     let mut csv_reader = csv::Reader::from_reader(csv_file);
     for record in csv_reader.deserialize() {
         let record: AirportRecord = record?;
@@ -204,6 +262,10 @@ pub fn calculate_centroid(airports: &[(String, Option<&Airport>)]) -> Point<f64>
         .iter()
         .filter_map(|(_, airport)| airport.to_owned())
         .collect::<Vec<_>>();
+    if airports_with_data_only.is_empty() {
+        warn!("no airports with coordinates; using CONUS centroid fallback");
+        return Point::new(-98.583333, 39.833333);
+    }
     let mut sum_x = 0.0;
     let mut sum_y = 0.0;
     let len = airports_with_data_only.len() as f64;
@@ -228,6 +290,73 @@ pub fn pilots_to_feature_collection(pilots: Vec<Pilot>) -> FeatureCollection {
             properties.insert(
                 "data".to_owned(),
                 serde_json::to_value(PilotData::from(pilot)).expect("could not serialize Pilot"),
+            );
+
+            Feature {
+                bbox: None,
+                geometry,
+                id,
+                properties: Some(properties),
+                foreign_members: None,
+            }
+        })
+        .collect::<Vec<_>>();
+
+    FeatureCollection {
+        bbox: None,
+        features,
+        foreign_members: None,
+    }
+}
+
+/// Convert pilots to optimized format, updating shared lookups for static data and flight plans.
+/// Returns a FeatureCollection with flight plan references instead of inline data.
+#[must_use]
+pub fn pilots_to_optimized_feature_collection(
+    pilots: Vec<Pilot>,
+    pilots_static: &mut HashMap<String, PilotStatic>,
+    flight_plans: &mut HashMap<String, FlightPlan>,
+) -> FeatureCollection {
+    let features = pilots
+        .into_iter()
+        .map(|pilot| {
+            let cid_str = pilot.cid.to_string();
+
+            // Add static pilot data if not already present
+            pilots_static.entry(cid_str.clone()).or_insert_with(|| PilotStatic {
+                name: pilot.name.clone(),
+                callsign: pilot.callsign.clone(),
+            });
+
+            // Build flight plan reference and add to lookup if present
+            let fp_ref = pilot.flight_plan.as_ref().map(|fp| {
+                let key = format!("{}_{}_{}", pilot.callsign, pilot.cid, fp.revision_id);
+                flight_plans
+                    .entry(key.clone())
+                    .or_insert_with(|| FlightPlan::from(fp.clone()));
+                key
+            });
+
+            let geometry = Some(Value::Point(vec![pilot.longitude, pilot.latitude]).into());
+            let id = Some(Id::Number(pilot.cid.into()));
+
+            let dynamic_data = PilotDynamic {
+                cid: pilot.cid,
+                latitude: pilot.latitude,
+                longitude: pilot.longitude,
+                altitude: pilot.altitude,
+                groundspeed: pilot.groundspeed,
+                transponder: pilot.transponder,
+                heading: pilot.heading,
+                fp: fp_ref,
+                logon_time: pilot.logon_time,
+                last_updated: pilot.last_updated,
+            };
+
+            let mut properties = JsonObject::new();
+            properties.insert(
+                "data".to_owned(),
+                serde_json::to_value(dynamic_data).expect("could not serialize PilotDynamic"),
             );
 
             Feature {

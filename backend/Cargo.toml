@@ -32,3 +32,4 @@ dotenvy = "0.15.7"
 aws-sdk-s3 = "1.120.0"
 aws-config = { version = "1.8.12", features = ["behavior-version-latest"] }
 futures = "0.3"
+flate2 = "1.1.9"
