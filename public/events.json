@@ -520,18 +520,33 @@
     "url": "https://data.vatsim-replay.com/2026-02-13-feel-the-love-fno.json"
   },
   {
-  "event": {
-    "advertised_end_time": "2026-02-16T04:00:00Z",
-    "advertised_start_time": "2026-02-15T23:59:00Z",
-    "airports": [
-      "KTPA"
-    ],
-    "artccs": [
-      "ZMA"
-    ],
-    "name": "West Coast with Love"
+    "event": {
+      "advertised_end_time": "2026-02-16T04:00:00Z",
+      "advertised_start_time": "2026-02-15T23:59:00Z",
+      "airports": ["KTPA"],
+      "artccs": ["ZMA"],
+      "name": "West Coast with Love"
+    },
+    "url": "https://data.vatsim-replay.com/2026-02-15-west-coast-with-love.json"
   },
-  "url": "https://data.vatsim-replay.com/2026-02-15-west-coast-with-love.json"
-}
-
+  {
+    "event": {
+      "advertised_end_time": "2026-02-21T04:00:00Z",
+      "advertised_start_time": "2026-02-20T23:59:00Z",
+      "airports": ["KSEA"],
+      "artccs": ["ZSE"],
+      "name": "Spring in Seattle"
+    },
+    "url": "https://data.vatsim-replay.com/2026-02-20-spring-in-seattle.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-02-21T04:00:00Z",
+      "advertised_start_time": "2026-02-20T23:59:00Z",
+      "airports": ["KEWR", "KJFK", "KLGA"],
+      "artccs": ["ZNY"],
+      "name": "The New York FNO: Love is in the Air"
+    },
+    "url": "https://data.vatsim-replay.com/2026-02-20-the-new-york-fno-love-is-in-the-air.json"
+  }
 ]
