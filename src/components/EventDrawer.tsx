@@ -66,6 +66,8 @@ export function EventDrawer() {
   const filteredAndSorted = useMemo(() => {
     const lower = filterText.toLowerCase();
     const filtered = eventsMetadata.filter((item) => {
+      // Hide unlisted events from the drawer
+      if (item.unlisted) return false;
       const e = item.event;
       return (
         e.name.toLowerCase().includes(lower) ||

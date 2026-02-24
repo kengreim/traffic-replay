@@ -62,7 +62,7 @@ interface PilotDynamic {
   last_updated: string;
 }
 
-type EventsMetadata = { event: EventConfig; url: string }[];
+type EventsMetadata = { event: EventConfig; url: string; unlisted?: boolean }[];
 
 interface TrafficData {
   [key: string]: FeatureCollection;
