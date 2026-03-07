@@ -602,7 +602,7 @@
       "artccs": ["ZOB", "ZTL"],
       "name": "Midtown to Motown Crossfire"
     },
-    "url": "https://data.vatsim-replay.com/2026-02-28-midtown-to-motown-crossfire.json.gz"
+    "url": "https://data.vatsim-replay.com/2026-02-28-midtown-to-motown-crossfire.json"
   },
   {
     "event": {
@@ -612,6 +612,6 @@
       "artccs": ["ZLA"],
       "name": "Spring into SoCal"
     },
-    "url": "https://data.vatsim-replay.com/2026-03-06-spring-into-socal.json.gz"
+    "url": "https://data.vatsim-replay.com/2026-03-06-spring-into-socal.json"
   }
 ]
