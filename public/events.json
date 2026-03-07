@@ -593,5 +593,25 @@
       "name": "Caribbean FNO"
     },
     "url": "https://data.vatsim-replay.com/2026-02-27-caribbean-fno.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-03-01T04:00:00Z",
+      "advertised_start_time": "2026-02-28T23:59:00Z",
+      "airports": ["KDTW", "KATL"],
+      "artccs": ["ZOB", "ZTL"],
+      "name": "Midtown to Motown Crossfire"
+    },
+    "url": "https://data.vatsim-replay.com/2026-02-28-midtown-to-motown-crossfire.json.gz"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-03-07T04:00:00Z",
+      "advertised_start_time": "2026-03-06T23:59:00Z",
+      "airports": ["KLAX", "KSAN", "KBUR", "KSNA"],
+      "artccs": ["ZLA"],
+      "name": "Spring into SoCal"
+    },
+    "url": "https://data.vatsim-replay.com/2026-03-06-spring-into-socal.json.gz"
   }
 ]
