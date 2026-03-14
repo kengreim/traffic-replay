@@ -623,5 +623,15 @@
       "name": "The Party at Palm Beach"
     },
     "url": "https://data.vatsim-replay.com/2026-03-08-the-party-at-palm-beach.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-03-14T03:00:00Z",
+      "advertised_start_time": "2026-03-13T23:00:00Z",
+      "airports": ["KMSP", "KDTW", "KORD"],
+      "artccs": ["ZMP", "ZAU", "ZOB"],
+      "name": "Northern Crossings IX"
+    },
+    "url": "https://data.vatsim-replay.com/2026-03-13-northern-crossings-ix.json"
   }
 ]
