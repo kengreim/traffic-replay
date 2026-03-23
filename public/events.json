@@ -633,5 +633,39 @@
       "name": "Northern Crossings IX"
     },
     "url": "https://data.vatsim-replay.com/2026-03-13-northern-crossings-ix.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-03-21T04:00:00Z",
+      "advertised_start_time": "2026-03-20T23:59:00Z",
+      "airports": ["CYVR", "CYLW", "CYYC", "PANC"],
+      "artccs": ["ZAN"],
+      "custom_airports": {
+        "CYLW": {
+          "latitude": 49.9561,
+          "longitude": -119.378
+        },
+        "CYVR": {
+          "latitude": 49.1939,
+          "longitude": -123.184
+        },
+        "CYYC": {
+          "latitude": 51.1188,
+          "longitude": -114.0099
+        }
+      },
+      "name": "The Mountain Wave FNO"
+    },
+    "url": "https://data.vatsim-replay.com/2026-03-20-the-mountain-wave-fno.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-03-22T03:00:00Z",
+      "advertised_start_time": "2026-03-21T23:00:00Z",
+      "airports": ["KDCA", "KIAD", "KBWI"],
+      "artccs": ["ZDC"],
+      "name": "vZDC Annual Cherry Blossom Fly-In"
+    },
+    "url": "https://data.vatsim-replay.com/2026-03-21-vzdc-annual-cherry-blossom-fly-in.json"
   }
 ]
