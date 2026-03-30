@@ -667,5 +667,15 @@
       "name": "vZDC Annual Cherry Blossom Fly-In"
     },
     "url": "https://data.vatsim-replay.com/2026-03-21-vzdc-annual-cherry-blossom-fly-in.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-03-28T03:00:00Z",
+      "advertised_start_time": "2026-03-27T23:00:00Z",
+      "airports": ["KDFW", "KDAL", "KIAH", "KAUS", "KSAT"],
+      "artccs": ["ZHU", "ZFW"],
+      "name": "Texas Triangle FNO"
+    },
+    "url": "https://data.vatsim-replay.com/2026-03-27-texas-triangle-fno.json"
   }
 ]
