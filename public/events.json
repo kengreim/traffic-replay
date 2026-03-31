@@ -677,5 +677,19 @@
       "name": "Texas Triangle FNO"
     },
     "url": "https://data.vatsim-replay.com/2026-03-27-texas-triangle-fno.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-03-31T03:00:00Z",
+      "advertised_start_time": "2026-03-30T22:30:00Z",
+      "airports": [
+        "KDTW"
+      ],
+      "artccs": [
+        "ZOB"
+      ],
+      "name": "Monday Night at Metro"
+    },
+    "url": "https://data.vatsim-replay.com/2026-03-30-monday-night-at-metro.json"
   }
 ]
