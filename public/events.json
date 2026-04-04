@@ -691,5 +691,25 @@
       "name": "Monday Night at Metro"
     },
     "url": "https://data.vatsim-replay.com/2026-03-30-monday-night-at-metro.json"
+  },
+  {
+      "event": {
+      "advertised_end_time": "2026-04-03T22:00:00Z",
+      "advertised_start_time": "2026-04-03T17:00:00Z",
+      "airports": [
+        "KSFO",
+        "KOAK",
+        "KSJC",
+        "KSMF",
+        "KRNO",
+        "KFAT"
+      ],
+      "artccs": [
+        "ZOA"
+      ],
+      "name": "[NON-SCHEDULED] ZOA Friday"
+    },
+    "url": "https://data.vatsim-replay.com/2026-04-03-non-scheduled-zoa-friday.json",
+    "unlisted": true
   }
 ]
