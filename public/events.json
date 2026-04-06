@@ -682,34 +682,43 @@
     "event": {
       "advertised_end_time": "2026-03-31T03:00:00Z",
       "advertised_start_time": "2026-03-30T22:30:00Z",
-      "airports": [
-        "KDTW"
-      ],
-      "artccs": [
-        "ZOB"
-      ],
+      "airports": ["KDTW"],
+      "artccs": ["ZOB"],
       "name": "Monday Night at Metro"
     },
     "url": "https://data.vatsim-replay.com/2026-03-30-monday-night-at-metro.json"
   },
   {
-      "event": {
+    "event": {
       "advertised_end_time": "2026-04-03T22:00:00Z",
       "advertised_start_time": "2026-04-03T17:00:00Z",
-      "airports": [
-        "KSFO",
-        "KOAK",
-        "KSJC",
-        "KSMF",
-        "KRNO",
-        "KFAT"
-      ],
-      "artccs": [
-        "ZOA"
-      ],
+      "airports": ["KSFO", "KOAK", "KSJC", "KSMF", "KRNO", "KFAT"],
+      "artccs": ["ZOA"],
       "name": "[NON-SCHEDULED] ZOA Friday"
     },
     "url": "https://data.vatsim-replay.com/2026-04-03-non-scheduled-zoa-friday.json",
     "unlisted": true
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-04-05T03:00:00Z",
+      "advertised_start_time": "2026-04-04T23:00:00Z",
+      "airports": [
+        "KBOS",
+        "KACK",
+        "KASH",
+        "KBED",
+        "KBVY",
+        "KFMH",
+        "KHYA",
+        "KLWM",
+        "KMHT",
+        "KOWD",
+        "KPSM"
+      ],
+      "artccs": ["ZBW"],
+      "name": "HONK VI: The Real Honkwives of Boston Approach"
+    },
+    "url": "https://data.vatsim-replay.com/2026-04-04-honk-vi-the-real-honkwives-of-boston-approach.json"
   }
 ]
