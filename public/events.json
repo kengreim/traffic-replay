@@ -730,5 +730,15 @@
       "name": "Farewell to Runway 14/32"
     },
     "url": "https://data.vatsim-replay.com/2026-04-07-farewell-to-runway-14-32.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-04-11T03:00:00Z",
+      "advertised_start_time": "2026-04-10T23:00:00Z",
+      "airports": ["KORD", "KMDW", "KMKE", "KRFD"],
+      "artccs": ["ZAU"],
+      "name": "The Great American FNO"
+    },
+    "url": "https://data.vatsim-replay.com/2026-04-10-the-great-american-fno.json"
   }
 ]
