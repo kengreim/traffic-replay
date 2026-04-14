@@ -750,5 +750,15 @@
       "name": "Orlando Overload 2026 | Live From Orlando"
     },
     "url": "https://data.vatsim-replay.com/2026-04-11-orlando-overload-2026-live-from-orlando.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-04-13T02:00:00Z",
+      "advertised_start_time": "2026-04-12T22:00:00Z",
+      "airports": ["KIAD"],
+      "artccs": ["ZDC"],
+      "name": "The Dulles Night Shift"
+    },
+    "url": "https://data.vatsim-replay.com/2026-04-12-the-dulles-night-shift.json"
   }
 ]
