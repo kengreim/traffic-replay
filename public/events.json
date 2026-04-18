@@ -763,7 +763,7 @@
   },
   {
     "event": {
-      "advertised_end_time": "2026-04-18T01:00:00Z",
+      "advertised_end_time": "2026-04-18T03:00:00Z",
       "advertised_start_time": "2026-04-17T23:00:00Z",
       "airports": ["KSLC", "KOAK", "KBFI", "KPDX"],
       "artccs": ["ZSE", "ZOA", "ZLC"],
