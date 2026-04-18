@@ -760,5 +760,15 @@
       "name": "The Dulles Night Shift"
     },
     "url": "https://data.vatsim-replay.com/2026-04-12-the-dulles-night-shift.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-04-18T01:00:00Z",
+      "advertised_start_time": "2026-04-17T23:00:00Z",
+      "airports": ["KSLC", "KOAK", "KBFI", "KPDX"],
+      "artccs": ["ZSE", "ZOA", "ZLC"],
+      "name": "Boxed In FNO"
+    },
+    "url": "https://data.vatsim-replay.com/2026-04-17-boxed-in-fno.json"
   }
 ]
