@@ -793,7 +793,7 @@
   },
   {
     "event": {
-      "advertised_end_time": "2026-04-26T01:00:00Z",
+      "advertised_end_time": "2026-04-25T14:00:00Z",
       "advertised_start_time": "2026-04-25T10:00:00Z",
       "airports": [
         "CYYC",
@@ -819,8 +819,104 @@
         "UUEE"
       ],
       "artccs": ["ZTL", "ZBW", "ZFW", "ZDC", "ZNY", "ZJX"],
-      "name": "CTP Eastbound 2026 (All Airports)"
+      "name": "CTP Eastbound 2026 (All Airports Part 1)"
     },
-    "url": "https://data.vatsim-replay.com/2026-04-25-ctp-eastbound-2026-all-airports.json"
+    "url": "https://data.vatsim-replay.com/2026-04-25-ctp-eastbound-2026-all-airports-part-1.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-04-25T18:00:00Z",
+      "advertised_start_time": "2026-04-25T14:00:00Z",
+      "airports": [
+        "CYYC",
+        "CYYZ",
+        "KATL",
+        "KBOS",
+        "KDFW",
+        "KIAD",
+        "KJFK",
+        "KMCO",
+        "SKBO",
+        "TNCM",
+        "EBBR",
+        "EDDP",
+        "EGLL",
+        "EHAM",
+        "ENGM",
+        "GOBD",
+        "LEMD",
+        "LFPG",
+        "LIMC",
+        "LOWW",
+        "UUEE"
+      ],
+      "artccs": ["ZTL", "ZBW", "ZFW", "ZDC", "ZNY", "ZJX"],
+      "name": "CTP Eastbound 2026 (All Airports Part 2)"
+    },
+    "url": "https://data.vatsim-replay.com/2026-04-25-ctp-eastbound-2026-all-airports-part-2.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-04-25T22:00:00Z",
+      "advertised_start_time": "2026-04-25T18:00:00Z",
+      "airports": [
+        "CYYC",
+        "CYYZ",
+        "KATL",
+        "KBOS",
+        "KDFW",
+        "KIAD",
+        "KJFK",
+        "KMCO",
+        "SKBO",
+        "TNCM",
+        "EBBR",
+        "EDDP",
+        "EGLL",
+        "EHAM",
+        "ENGM",
+        "GOBD",
+        "LEMD",
+        "LFPG",
+        "LIMC",
+        "LOWW",
+        "UUEE"
+      ],
+      "artccs": ["ZTL", "ZBW", "ZFW", "ZDC", "ZNY", "ZJX"],
+      "name": "CTP Eastbound 2026 (All Airports Part 3)"
+    },
+    "url": "https://data.vatsim-replay.com/2026-04-25-ctp-eastbound-2026-all-airports-part-3.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-04-26T01:00:00Z",
+      "advertised_start_time": "2026-04-25T22:00:00Z",
+      "airports": [
+        "CYYC",
+        "CYYZ",
+        "KATL",
+        "KBOS",
+        "KDFW",
+        "KIAD",
+        "KJFK",
+        "KMCO",
+        "SKBO",
+        "TNCM",
+        "EBBR",
+        "EDDP",
+        "EGLL",
+        "EHAM",
+        "ENGM",
+        "GOBD",
+        "LEMD",
+        "LFPG",
+        "LIMC",
+        "LOWW",
+        "UUEE"
+      ],
+      "artccs": ["ZTL", "ZBW", "ZFW", "ZDC", "ZNY", "ZJX"],
+      "name": "CTP Eastbound 2026 (All Airports Part 4)"
+    },
+    "url": "https://data.vatsim-replay.com/2026-04-25-ctp-eastbound-2026-all-airports-part-4.json"
   }
 ]
