@@ -964,5 +964,15 @@
       "name": "Raleigh Spring Festival"
     },
     "url": "https://data.vatsim-replay.com/2026-05-06-raleigh-spring-festival.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-05-09T03:00:00Z",
+      "advertised_start_time": "2026-05-08T23:00:00Z",
+      "airports": ["KCLE", "KCMH", "KCAK", "KDAY"],
+      "artccs": ["ZOB", "ZID"],
+      "name": "Things To Do in Ohio"
+    },
+    "url": "https://data.vatsim-replay.com/2026-05-08-things-to-do-in-ohio.json"
   }
 ]
