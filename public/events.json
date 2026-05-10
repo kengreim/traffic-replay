@@ -974,5 +974,15 @@
       "name": "Things To Do in Ohio"
     },
     "url": "https://data.vatsim-replay.com/2026-05-08-things-to-do-in-ohio.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-05-10T03:00:00Z",
+      "advertised_start_time": "2026-05-09T23:00:00Z",
+      "airports": ["KATL", "KPDK", "KFTY"],
+      "artccs": ["ZTL"],
+      "name": "The Atlanta Perimeter"
+    },
+    "url": "https://data.vatsim-replay.com/2026-05-09-the-atlanta-perimeter.json"
   }
 ]
