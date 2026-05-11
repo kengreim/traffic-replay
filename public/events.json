@@ -984,5 +984,15 @@
       "name": "The Atlanta Perimeter"
     },
     "url": "https://data.vatsim-replay.com/2026-05-09-the-atlanta-perimeter.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-05-11T02:00:00Z",
+      "advertised_start_time": "2026-05-10T20:30:00Z",
+      "airports": ["KSLC"],
+      "artccs": ["ZLC"],
+      "name": "Salt Lake Sunday"
+    },
+    "url": "https://data.vatsim-replay.com/2026-05-10-salt-lake-sunday.json"
   }
 ]
