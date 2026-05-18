@@ -974,5 +974,25 @@
       "name": "Things To Do in Ohio"
     },
     "url": "https://data.vatsim-replay.com/2026-05-08-things-to-do-in-ohio.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-05-16T03:00:00Z",
+      "advertised_start_time": "2026-05-15T23:00:00Z",
+      "airports": ["KPHX", "KABQ"],
+      "artccs": ["ZAB"],
+      "name": "Desert Southwest Spotlight"
+    },
+    "url": "https://data.vatsim-replay.com/2026-05-15-desert-southwest-spotlight.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-05-17T03:00:00Z",
+      "advertised_start_time": "2026-05-16T23:00:00Z",
+      "airports": ["KIAH", "KHOU"],
+      "artccs": ["ZHU"],
+      "name": "Houston Live SNO"
+    },
+    "url": "https://data.vatsim-replay.com/2026-05-16-houston-live-sno.json"
   }
 ]
