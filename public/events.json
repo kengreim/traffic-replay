@@ -1014,5 +1014,35 @@
       "name": "Houston Live SNO"
     },
     "url": "https://data.vatsim-replay.com/2026-05-16-houston-live-sno.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-05-23T03:00:00Z",
+      "advertised_start_time": "2026-05-22T23:00:00Z",
+      "airports": ["KMIA", "KFLL", "TJSJ", "TISX", "MYNN", "MKJS", "MUHA"],
+      "artccs": ["ZMA"],
+      "name": "Sunset Over the Caribbean FNO"
+    },
+    "url": "https://data.vatsim-replay.com/2026-05-22-sunset-over-the-caribbean-fno.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-05-24T05:00:00Z",
+      "advertised_start_time": "2026-05-23T23:00:00Z",
+      "airports": ["KDCA", "KIAD", "KBWI", "KRIC"],
+      "artccs": ["ZDC"],
+      "name": "24 Hours of vZDC (SNO 6 hours)"
+    },
+    "url": "https://data.vatsim-replay.com/2026-05-23-24-hours-of-vzdc-sno-6-hours.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-05-25T03:00:00Z",
+      "advertised_start_time": "2026-05-24T23:00:00Z",
+      "airports": ["KSEA"],
+      "artccs": ["ZSE"],
+      "name": "Northwest Nights"
+    },
+    "url": "https://data.vatsim-replay.com/2026-05-24-northwest-nights.json"
   }
 ]
