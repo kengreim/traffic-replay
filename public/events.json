@@ -1044,5 +1044,15 @@
       "name": "Northwest Nights"
     },
     "url": "https://data.vatsim-replay.com/2026-05-24-northwest-nights.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-05-30T03:00:00Z",
+      "advertised_start_time": "2026-05-29T23:00:00Z",
+      "airports": ["KDEN"],
+      "artccs": ["ZDV"],
+      "name": "Denver Live"
+    },
+    "url": "https://data.vatsim-replay.com/2026-05-29-denver-live.json"
   }
 ]
