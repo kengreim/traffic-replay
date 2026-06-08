@@ -1054,5 +1054,25 @@
       "name": "Denver Live"
     },
     "url": "https://data.vatsim-replay.com/2026-05-29-denver-live.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-06-06T03:00:00Z",
+      "advertised_start_time": "2026-06-05T23:00:00Z",
+      "airports": ["KIAD", "KDCA", "KBWI"],
+      "artccs": ["ZDC"],
+      "name": "National Parks and National Monuments FNO (East)"
+    },
+    "url": "https://data.vatsim-replay.com/2026-06-05-national-parks-and-national-monuments-fno-east.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-06-06T03:00:00Z",
+      "advertised_start_time": "2026-06-05T23:00:00Z",
+      "airports": ["KSLC"],
+      "artccs": ["ZLC"],
+      "name": "National Parks and National Monuments FNO (West)"
+    },
+    "url": "https://data.vatsim-replay.com/2026-06-05-national-parks-and-national-monuments-fno-west.json"
   }
 ]
