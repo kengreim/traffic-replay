@@ -1074,5 +1074,15 @@
       "name": "National Parks and National Monuments FNO (West)"
     },
     "url": "https://data.vatsim-replay.com/2026-06-05-national-parks-and-national-monuments-fno-west.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-06-13T03:00:00Z",
+      "advertised_start_time": "2026-06-12T23:00:00Z",
+      "airports": ["KMSP"],
+      "artccs": ["ZMP"],
+      "name": "Nothern Exposure FNO (FSExpo)"
+    },
+    "url": "https://data.vatsim-replay.com/2026-06-12-nothern-exposure-fno-fsexpo.json"
   }
 ]
