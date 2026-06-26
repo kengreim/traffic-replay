@@ -1084,5 +1084,15 @@
       "name": "Nothern Exposure FNO (FSExpo)"
     },
     "url": "https://data.vatsim-replay.com/2026-06-12-nothern-exposure-fno-fsexpo.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-06-20T04:00:00Z",
+      "advertised_start_time": "2026-06-19T23:59:00Z",
+      "airports": ["MMMY", "MMGL", "MMMX"],
+      "artccs": [],
+      "name": "The Golden Triangle FNO (VATMEX)"
+    },
+    "url": "https://data.vatsim-replay.com/2026-06-19-the-golden-triangle-fno-vatmex.json"
   }
 ]
