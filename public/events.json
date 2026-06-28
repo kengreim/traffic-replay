@@ -1094,5 +1094,25 @@
       "name": "The Golden Triangle FNO (VATMEX)"
     },
     "url": "https://data.vatsim-replay.com/2026-06-19-the-golden-triangle-fno-vatmex.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-06-27T03:00:00Z",
+      "advertised_start_time": "2026-06-26T23:00:00Z",
+      "airports": ["KDTW"],
+      "artccs": ["ZOB"],
+      "name": "Fireworks on Final"
+    },
+    "url": "https://data.vatsim-replay.com/2026-06-26-fireworks-on-final.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-06-28T03:00:00Z",
+      "advertised_start_time": "2026-06-27T23:00:00Z",
+      "airports": ["KLAX", "KSAN", "KSNA", "KBUR", "KONT", "KPSP"],
+      "artccs": ["ZLA"],
+      "name": "ZLA Live"
+    },
+    "url": "https://data.vatsim-replay.com/2026-06-27-zla-live.json"
   }
 ]
