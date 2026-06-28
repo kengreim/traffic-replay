@@ -104,7 +104,10 @@ function App() {
   // History trail types and refs
   interface TrailEntry {
     path: [number, number][];
-    flightPlan: { departure: string; arrival: string } | null;
+    // Flight plan recorded for each path point (kept in sync with `path`).
+    // An aircraft's flight plan can be absent at first contact or change over
+    // time, so we track it per position rather than once at trail creation.
+    flightPlans: ({ departure: string; arrival: string } | null)[];
   }
 
   const trailMapRef = useRef<Map<string, TrailEntry>>(new Map());
@@ -142,15 +145,15 @@ function App() {
             const key = `${data.cid}-${data.callsign}`;
             let entry = trailMap.get(key);
             if (!entry) {
-              entry = {
-                path: [],
-                flightPlan: data.flight_plan
-                  ? { departure: data.flight_plan.departure, arrival: data.flight_plan.arrival }
-                  : null,
-              };
+              entry = { path: [], flightPlans: [] };
               trailMap.set(key, entry);
             }
             entry.path.push([data.longitude, data.latitude]);
+            entry.flightPlans.push(
+              data.flight_plan
+                ? { departure: data.flight_plan.departure, arrival: data.flight_plan.arrival }
+                : null,
+            );
             keysAtStep.push(key);
           }
         }
@@ -165,6 +168,7 @@ function App() {
             const entry = trailMap.get(key);
             if (entry) {
               entry.path.pop();
+              entry.flightPlans.pop();
               if (entry.path.length === 0) {
                 trailMap.delete(key);
               }
@@ -207,8 +211,10 @@ function App() {
     for (const [key, entry] of trailMap) {
       if (entry.path.length < 2) continue;
       if (showDisconnected) {
-        // Show all trails that match route filters
-        if (matchesRouteFilters(entry.flightPlan)) {
+        // Show all trails where the aircraft matched the route filters at any
+        // point along its path (its flight plan may have been absent at first
+        // contact or changed over time).
+        if (entry.flightPlans.some((fp) => matchesRouteFilters(fp))) {
           result.push({ key, path: entry.path });
         }
       } else {
