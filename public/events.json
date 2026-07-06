@@ -1114,5 +1114,15 @@
       "name": "ZLA Live"
     },
     "url": "https://data.vatsim-replay.com/2026-06-27-zla-live.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-07-04T03:00:00Z",
+      "advertised_start_time": "2026-07-03T23:00:00Z",
+      "airports": ["KIAD", "KDCA", "KBWI"],
+      "artccs": ["ZDC"],
+      "name": "Fourth of July Preparty"
+    },
+    "url": "https://data.vatsim-replay.com/2026-07-03-fourth-of-july-preparty.json"
   }
 ]
