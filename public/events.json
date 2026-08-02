@@ -1154,5 +1154,15 @@
       "name": "ZSE Live 2026"
     },
     "url": "https://data.vatsim-replay.com/2026-07-18-zse-live-2026.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-08-02T04:00:00Z",
+      "advertised_start_time": "2026-08-01T23:00:00Z",
+      "airports": ["KSFO", "KOAK", "KSJC", "KSMF"],
+      "artccs": ["ZOA"],
+      "name": "ZOA Live 2026"
+    },
+    "url": "https://data.vatsim-replay.com/2026-08-01-zoa-live-2026.json"
   }
 ]
