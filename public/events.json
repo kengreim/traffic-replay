@@ -1157,6 +1157,16 @@
   },
   {
     "event": {
+      "advertised_end_time": "2026-08-01T22:00:00Z",
+      "advertised_start_time": "2026-08-01T16:00:00Z",
+      "airports": ["KBOS", "KMHT", "KBDL", "KPVD"],
+      "artccs": ["ZBW"],
+      "name": "27th Annual Boston Tea Party - Live"
+    },
+    "url": "https://data.vatsim-replay.com/2026-08-01-27th-annual-boston-tea-party-live.json"
+  },
+  {
+    "event": {
       "advertised_end_time": "2026-08-02T04:00:00Z",
       "advertised_start_time": "2026-08-01T23:00:00Z",
       "airports": ["KSFO", "KOAK", "KSJC", "KSMF"],
