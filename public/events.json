@@ -1157,6 +1157,16 @@
   },
   {
     "event": {
+      "advertised_end_time": "2026-08-01T03:00:00Z",
+      "advertised_start_time": "2026-07-31T23:00:00Z",
+      "airports": ["CYWG", "CYYZ"],
+      "artccs": [""],
+      "name": "The 'Peg to Pearson FNO"
+    },
+    "url": "https://data.vatsim-replay.com/2026-07-31-the-peg-to-pearson-fno.json"
+  },
+  {
+    "event": {
       "advertised_end_time": "2026-08-01T22:00:00Z",
       "advertised_start_time": "2026-08-01T16:00:00Z",
       "airports": ["KBOS", "KMHT", "KBDL", "KPVD"],
@@ -1174,5 +1184,15 @@
       "name": "ZOA Live 2026"
     },
     "url": "https://data.vatsim-replay.com/2026-08-01-zoa-live-2026.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-08-06T03:00:00Z",
+      "advertised_start_time": "2026-08-05T23:00:00Z",
+      "airports": ["KBWI"],
+      "artccs": ["ZDC"],
+      "name": "A Wednesday Night in Charm City"
+    },
+    "url": "https://data.vatsim-replay.com/2026-08-05-a-wednesday-night-in-charm-city.json"
   }
 ]
