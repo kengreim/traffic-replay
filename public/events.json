@@ -1194,5 +1194,15 @@
       "name": "A Wednesday Night in Charm City"
     },
     "url": "https://data.vatsim-replay.com/2026-08-05-a-wednesday-night-in-charm-city.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-08-10T02:00:00Z",
+      "advertised_start_time": "2026-08-09T22:00:00Z",
+      "airports": ["KATL", "KDTW", "KBOS"],
+      "artccs": ["ZTL", "ZOB", "ZBW"],
+      "name": "Synaptic A220 VATSIM Event in Collaboration with VATUSA"
+    },
+    "url": "https://data.vatsim-replay.com/2026-08-09-synaptic-a220-vatsim-event-in-collaboration-with-vatusa.json"
   }
 ]
