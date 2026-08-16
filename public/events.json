@@ -1204,5 +1204,25 @@
       "name": "Synaptic A220 VATSIM Event in Collaboration with VATUSA"
     },
     "url": "https://data.vatsim-replay.com/2026-08-09-synaptic-a220-vatsim-event-in-collaboration-with-vatusa.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-08-15T03:00:00Z",
+      "advertised_start_time": "2026-08-14T23:00:00Z",
+      "airports": ["KDFW", "KADS", "KAFW"],
+      "artccs": ["ZFW"],
+      "name": "Metroplex Madness"
+    },
+    "url": "https://data.vatsim-replay.com/2026-08-14-metroplex-madness.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-08-15T21:00:00Z",
+      "advertised_start_time": "2026-08-15T14:00:00Z",
+      "airports": ["KEWR", "KLGA", "KJFK", "KPHL"],
+      "artccs": ["ZNY"],
+      "name": "ZNY Live Event"
+    },
+    "url": "https://data.vatsim-replay.com/2026-08-15-zny-live-event.json"
   }
 ]
