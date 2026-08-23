@@ -1224,5 +1224,15 @@
       "name": "ZNY Live Event"
     },
     "url": "https://data.vatsim-replay.com/2026-08-15-zny-live-event.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-08-22T03:00:00Z",
+      "advertised_start_time": "2026-08-21T23:00:00Z",
+      "airports": ["KPDX", "KSEA", "KBOI", "KPIH", "KSLC"],
+      "artccs": ["ZSE", "ZLC"],
+      "name": "Pioneering the Pacific"
+    },
+    "url": "https://data.vatsim-replay.com/2026-08-21-pioneering-the-pacific.json"
   }
 ]
