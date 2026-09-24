@@ -1254,5 +1254,35 @@
       "name": "The Great Lakes Slug Fest"
     },
     "url": "https://data.vatsim-replay.com/2026-08-28-the-great-lakes-slug-fest.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-09-19T03:00:00Z",
+      "advertised_start_time": "2026-09-18T23:00:00Z",
+      "airports": ["KSEA"],
+      "artccs": ["ZSE"],
+      "name": "SUMMA's End FNO"
+    },
+    "url": "https://data.vatsim-replay.com/2026-09-18-summa-s-end-fno.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-09-19T03:00:00Z",
+      "advertised_start_time": "2026-09-18T23:00:00Z",
+      "airports": ["KJFK", "KEWR", "KLGA"],
+      "artccs": ["ZNY"],
+      "name": "The New York FNO: Rush Hour"
+    },
+    "url": "https://data.vatsim-replay.com/2026-09-18-the-new-york-fno-rush-hour.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-09-20T01:00:00Z",
+      "advertised_start_time": "2026-09-19T18:00:00Z",
+      "airports": ["KATL", "SKBO"],
+      "artccs": ["ZTL"],
+      "name": "Back to the South"
+    },
+    "url": "https://data.vatsim-replay.com/2026-09-19-back-to-the-south.json"
   }
 ]
