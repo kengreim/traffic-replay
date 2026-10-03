@@ -1304,5 +1304,14 @@
       "name": "Light Up ZDC"
     },
     "url": "https://data.vatsim-replay.com/2026-09-27-light-up-zdc.json"
+  },{
+    "event": {
+      "advertised_end_time": "2026-10-03T03:00:00Z",
+      "advertised_start_time": "2026-10-02T23:00:00Z",
+      "airports": ["KPHX", "KSAN", "KLAX"],
+      "artccs": ["ZAB", "ZLA"],
+      "name": "Southwest Shuffle FNO"
+    },
+    "url": "https://data.vatsim-replay.com/2026-10-02-southwest-shuffle-fno.json"
   }
 ]
