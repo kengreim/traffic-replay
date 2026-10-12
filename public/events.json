@@ -1324,5 +1324,15 @@
       "name": "24 Hours of VATSIM: SLC-DEN"
     },
     "url": "https://data.vatsim-replay.com/2026-10-03-24-hours-of-vatsim-slc-den.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-10-11T23:59:00Z",
+      "advertised_start_time": "2026-10-11T20:00:00Z",
+      "airports": ["KSLC", "KPVU"],
+      "artccs": ["ZLC"],
+      "name": "Salt Lake Sunday"
+    },
+    "url": "https://data.vatsim-replay.com/2026-10-11-salt-lake-sunday.json"
   }
 ]
