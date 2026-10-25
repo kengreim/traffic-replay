@@ -1364,5 +1364,25 @@
       "name": "vZDC Presents: Live From Roanoke"
     },
     "url": "https://data.vatsim-replay.com/2026-10-17-vzdc-presents-live-from-roanoke.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-10-24T03:00:00Z",
+      "advertised_start_time": "2026-10-23T23:00:00Z",
+      "airports": ["KMIA", "KTPA", "MPTO", "MSLP"],
+      "artccs": ["ZMA", "ZJX"],
+      "name": "The Pan American Express FNO"
+    },
+    "url": "https://data.vatsim-replay.com/2026-10-23-the-pan-american-express-fno.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-10-25T03:00:00Z",
+      "advertised_start_time": "2026-10-24T23:00:00Z",
+      "airports": ["KORD", "KMDW"],
+      "artccs": ["ZAU"],
+      "name": "Live from Chicago 2026"
+    },
+    "url": "https://data.vatsim-replay.com/2026-10-24-live-from-chicago-2026.json"
   }
 ]
