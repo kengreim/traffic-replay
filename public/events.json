@@ -1384,5 +1384,15 @@
       "name": "Live from Chicago 2026"
     },
     "url": "https://data.vatsim-replay.com/2026-10-24-live-from-chicago-2026.json"
+  },
+  {
+    "event": {
+      "advertised_end_time": "2026-10-26T03:00:00Z",
+      "advertised_start_time": "2026-10-25T23:00:00Z",
+      "airports": ["KSFO", "KOAK", "KSJC"],
+      "artccs": ["ZOA"],
+      "name": "Trick or Bay"
+    },
+    "url": "https://data.vatsim-replay.com/2026-10-25-trick-or-bay.json"
   }
 ]
