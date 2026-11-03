@@ -40,9 +40,18 @@ services:
       R2_BUCKET: ${R2_BUCKET:-}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
-    # Only reachable from the host; put a reverse proxy with HTTPS in front to expose it
+    # Exposed publicly through the cloudflared tunnel; this mapping is for local access only
     ports:
       - "127.0.0.1:8080:8080"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    restart: unless-stopped
+    depends_on:
+      - scheduler
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN must be set}
 
 volumes:
   pgdata:
