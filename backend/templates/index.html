@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Events{% endblock %}
+{% block head %}{% if in_progress %}{% include "refresh.html" %}{% endif %}{% endblock %}
 {% block content %}
 {% if let Some(n) = notice %}<div class="banner ok">{{ n }}</div>{% endif %}
 {% if !r2_configured %}<div class="banner warn">R2 isn't configured, so approved events will fail to publish. Set R2_ENDPOINT_URL and R2_BUCKET.</div>{% endif %}

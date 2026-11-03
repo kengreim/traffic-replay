@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{% endblock %} · Replay scheduler</title>
+  {% block head %}{% endblock %}
   <style>
     :root {
       color-scheme: light dark;
@@ -59,6 +60,13 @@
     dd { margin: 0; overflow-wrap: anywhere; }
     pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; max-height: 420px; overflow: auto; }
     details summary { cursor: pointer; }
+    .banner.progress { background: var(--ok-bg); color: var(--ok); display: flex; align-items: center; gap: 10px; }
+    .spinner { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; flex: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .event-banner { display: block; margin-top: 8px; }
+    .event-banner img { display: block; max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border); }
+    .event-banner + h3 { margin-top: 16px; }
+    h3 { font-size: 0.95rem; margin: 0; }
     .layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; }
     @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
   </style>
