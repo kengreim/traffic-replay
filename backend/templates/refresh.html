@@ -1,0 +1,22 @@
+<script data-poll-url="{{ poll_url }}" data-poll-state="{{ poll_state }}">
+  (() => {
+    const { pollUrl, pollState } = document.currentScript.dataset;
+    // Reload without the notice query string so it isn't shown again
+    const reload = () => location.replace(location.pathname);
+    const poll = async () => {
+      try {
+        const response = await fetch(pollUrl, { cache: "no-store" });
+        // Logged out: reloading brings back the login prompt
+        if (response.status === 401) return reload();
+        if (response.ok) {
+          const { state } = await response.json();
+          if (state !== pollState) return reload();
+        }
+      } catch {
+        // Network hiccup; try again next time
+      }
+      setTimeout(poll, 3000);
+    };
+    setTimeout(poll, 3000);
+  })();
+</script>

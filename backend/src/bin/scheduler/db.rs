@@ -97,6 +97,15 @@ impl EventRow {
         self.collation_due_at() <= now
     }
 
+    /// Collating now, or approved and waiting for the collation loop to pick it up.
+    pub fn is_collation_pending(&self, now: DateTime<Utc>) -> bool {
+        match self.status() {
+            Status::Collating => true,
+            Status::Approved => self.has_ended(now),
+            _ => false,
+        }
+    }
+
     /// When the oldest datafeed needed for collation will be pruned.
     pub fn data_expires_at(&self) -> DateTime<Utc> {
         collation_window(&self.config()).0 + chrono::Duration::days(DATAFEED_RETENTION_DAYS.into())

@@ -4,7 +4,7 @@ use askama::Template;
 use axum::extract::{Form, Path, Query, Request, State};
 use axum::http::{HeaderMap, Method, StatusCode, header};
 use axum::middleware::{self, Next};
-use axum::response::{Html, IntoResponse, Redirect, Response};
+use axum::response::{Html, IntoResponse, Json, Redirect, Response};
 use axum::routing::{get, post};
 use axum::Router;
 use base64::Engine;
@@ -27,10 +27,12 @@ const INPUT_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M";
 pub fn router(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/", get(index))
+        .route("/status", get(index_status))
         .route("/poll", post(poll_now))
         .route("/events/new", get(new_event))
         .route("/events", post(create_event))
         .route("/events/{id}", get(show_event).post(save_event))
+        .route("/events/{id}/status", get(event_status))
         .route("/events/{id}/{action}", post(event_action))
         .layer(middleware::from_fn_with_state(state.clone(), require_auth))
         .with_state(state)
@@ -159,7 +161,7 @@ fn notice_text(code: &str) -> Option<&'static str> {
         "created" => "Event created.",
         "saved" => "Changes saved.",
         "approved" => "Approved. It will be collated once the event ends.",
-        "approved-ended" => "Approved. The event has ended, so collation is starting.",
+        "approved-ended" => "Approved. The event has ended, so it's been queued for collation.",
         "unapproved" => "Approval removed.",
         "skipped" => "Event skipped.",
         "unskipped" => "Event moved back to review.",
@@ -208,6 +210,9 @@ struct IndexTemplate {
     poll_error: Option<String>,
     r2_configured: bool,
     notice: Option<String>,
+    in_progress: bool,
+    poll_url: String,
+    poll_state: String,
 }
 
 fn sources_label(row: &EventRow) -> String {
@@ -299,9 +304,35 @@ async fn index(State(state): State<Arc<AppState>>, Query(q): Query<NoticeQuery>)
             poll_error,
             r2_configured: state.r2.is_some(),
             notice: q.notice(),
+            in_progress: rows.iter().any(|row| row.is_collation_pending(now)),
+            poll_url: "/status".to_owned(),
+            poll_state: pending_state(&rows, now),
         },
         StatusCode::OK,
     )
+}
+
+/// Identifies the events that are queued or collating, so the index page can
+/// tell when one of them finishes.
+fn pending_state(rows: &[EventRow], now: DateTime<Utc>) -> String {
+    rows.iter()
+        .filter(|row| row.is_collation_pending(now))
+        .map(|row| format!("{}:{}", row.id, row.status().as_str()))
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+#[derive(serde::Serialize)]
+struct StatusResponse {
+    state: String,
+}
+
+async fn index_status(State(state): State<Arc<AppState>>) -> HandlerResult {
+    let rows = db::list_events(&state.pool).await?;
+    Ok(Json(StatusResponse {
+        state: pending_state(&rows, Utc::now()),
+    })
+    .into_response())
 }
 
 async fn poll_now(State(state): State<Arc<AppState>>) -> Redirect {
@@ -440,11 +471,16 @@ struct EventTemplate {
     notice: Option<String>,
     error: Option<String>,
     warnings: Vec<String>,
+    /// Waiting for or running collation; the page polls its status until it's done
+    in_progress: bool,
+    poll_url: String,
+    poll_state: String,
     actions: Vec<Action>,
     details: Vec<(&'static str, String)>,
     proposal: Option<ProposalView>,
     vatsim_link: Option<String>,
     vatusa_body: Option<String>,
+    banners: Vec<(&'static str, String)>,
     sources_json: Vec<(&'static str, String)>,
 }
 
@@ -459,11 +495,15 @@ impl EventTemplate {
             notice: None,
             error,
             warnings: vec![],
+            in_progress: false,
+            poll_url: String::new(),
+            poll_state: String::new(),
             actions: vec![],
             details: vec![],
             proposal: None,
             vatsim_link: None,
             vatusa_body: None,
+            banners: vec![],
             sources_json: vec![],
         }
     }
@@ -581,6 +621,13 @@ impl EventTemplate {
                 .and_then(serde_json::Value::as_str)
                 .map(str::to_owned)
         };
+        let banners = [
+            ("VATUSA", source_value(&row.vatusa_source, "banner_image_url")),
+            ("VATSIM", source_value(&row.vatsim_source, "banner")),
+        ]
+        .into_iter()
+        .filter_map(|(label, url)| Some((label, url.filter(|u| is_http_url(u))?)))
+        .collect();
         let sources_json = [("VATUSA", &row.vatusa_source), ("VATSIM", &row.vatsim_source)]
             .into_iter()
             .filter_map(|(label, v)| {
@@ -597,6 +644,9 @@ impl EventTemplate {
             notice: None,
             error: status.eq(&Status::Failed).then(|| row.error.clone()).flatten(),
             warnings,
+            in_progress: row.is_collation_pending(now),
+            poll_url: format!("/events/{}/status", row.id),
+            poll_state: status.as_str().to_owned(),
             actions,
             details,
             proposal: row.proposal.as_ref().map(|p| ProposalView {
@@ -608,9 +658,14 @@ impl EventTemplate {
             }),
             vatsim_link: source_value(&row.vatsim_source, "link"),
             vatusa_body: source_value(&row.vatusa_source, "body"),
+            banners,
             sources_json,
         }
     }
+}
+
+fn is_http_url(url: &str) -> bool {
+    url.starts_with("https://") || url.starts_with("http://")
 }
 
 async fn new_event() -> HandlerResult {
@@ -639,6 +694,16 @@ async fn show_event(
     let mut page = EventTemplate::for_row(&state, &row, EventForm::from_row(&row));
     page.notice = q.notice();
     render(&page, StatusCode::OK)
+}
+
+async fn event_status(State(state): State<Arc<AppState>>, Path(id): Path<i64>) -> HandlerResult {
+    let Some(row) = db::get_event(&state.pool, id).await? else {
+        return Ok(not_found());
+    };
+    Ok(Json(StatusResponse {
+        state: row.status().as_str().to_owned(),
+    })
+    .into_response())
 }
 
 async fn save_event(
@@ -783,6 +848,26 @@ mod tests {
         assert!(is_same_origin(&headers(&[("origin", "https://sched.example"), ("host", "sched.example")])));
         assert!(!is_same_origin(&headers(&[("origin", "https://evil.example"), ("host", "sched.example")])));
         assert!(is_same_origin(&headers(&[])));
+    }
+
+    #[test]
+    fn status_route_coexists_with_actions() {
+        // Same shapes as the real router; axum panics here if they conflict
+        let _: Router = Router::new()
+            .route("/events/{id}/status", get(|| async {}))
+            .route("/events/{id}/{action}", post(|| async {}));
+    }
+
+    #[test]
+    fn renders_status_poller() {
+        let mut page = EventTemplate::new_event(EventForm::default(), None);
+        assert!(!page.render().unwrap().contains("data-poll-url"));
+        page.in_progress = true;
+        page.poll_url = "/events/7/status".to_owned();
+        page.poll_state = "collating".to_owned();
+        let html = page.render().unwrap();
+        assert!(html.contains(r#"data-poll-url="/events/7/status""#));
+        assert!(html.contains(r#"data-poll-state="collating""#));
     }
 
     #[test]
