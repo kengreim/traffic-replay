@@ -11,8 +11,12 @@ path = "src/bin/fetcher.rs"
 name = "collator"
 path = "src/bin/collator.rs"
 
+[[bin]]
+name = "scheduler"
+path = "src/bin/scheduler/main.rs"
+
 [dependencies]
-tokio = { version = "1.49.0", features = ["rt", "rt-multi-thread", "macros", "time"] }
+tokio = { version = "1.49.0", features = ["rt", "rt-multi-thread", "macros", "time", "sync", "net"] }
 chrono = { version = "0.4.43", features = ["serde"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["json", "env-filter"] }
@@ -33,3 +37,7 @@ aws-sdk-s3 = "1.120.0"
 aws-config = { version = "1.8.12", features = ["behavior-version-latest"] }
 futures = "0.3"
 flate2 = "1.1.9"
+axum = "0.8.9"
+askama = "0.16.1"
+base64 = "0.22.1"
+regex = "1.12.3"

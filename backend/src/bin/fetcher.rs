@@ -11,6 +11,7 @@ use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tracing::{debug, error, info, warn};
 use tracing_subscriber::fmt::format::FmtSpan;
+use traffic_replay::DATAFEED_RETENTION_DAYS;
 use vatsim_utils::models::Pilot;
 
 #[derive(Deserialize)]
@@ -189,9 +190,12 @@ async fn cleanup_loop(pool: &PgPool) {
     loop {
         sleep(Duration::from_secs(3600)).await;
 
-        let result = sqlx::query("DELETE FROM datafeeds WHERE update_timestamp < NOW() - INTERVAL '7 days'")
-            .execute(pool)
-            .await;
+        let result = sqlx::query(
+            "DELETE FROM datafeeds WHERE update_timestamp < NOW() - make_interval(days => $1)",
+        )
+        .bind(DATAFEED_RETENTION_DAYS)
+        .execute(pool)
+        .await;
 
         match result {
             Ok(r) => {

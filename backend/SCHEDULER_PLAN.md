@@ -1,83 +1,133 @@
-# Scheduler Plan: Automatic VATUSA Event Collation
+# Scheduler Plan: Event Discovery, Review and Collation
 
-## New binary: `scheduler`
+## Overview
 
-A long-running process that polls the VATSIM events API, tracks event lifecycle, and triggers collation + upload automatically.
+A new long-running binary, `scheduler`, that:
+
+1. Polls the VATUSA and VATSIM event APIs and builds a proposed config (name, times, airports, ARTCCs) for each upcoming event
+2. Serves a small web UI where events are reviewed, edited and approved
+3. Collates and publishes **only approved events**, once the event has ended plus the post-event buffer
+
+Nothing is collated or uploaded without explicit approval. The existing `collator` CLI keeps working from `config.toml`.
+
+## Event sources
+
+### VATUSA (primary list of events)
+
+- `GET https://api.vatusa.net/v3/events?start_date_from=<7 days ago>&count=100`, paginated with `X-Total-Pages`
+- Anonymous requests only return approved events, which is what we want
+- Fields used: `id`, `title`, `body`, `facility`, `start_time`, `end_time` (unix seconds)
+- `facility` is the host ARTCC (`ZHQ` for division-hosted events, which contributes no ARTCC)
+
+### VATSIM (airports, when available)
+
+- `GET https://my.vatsim.net/api/v2/events/view/division/USA`
+- Fields used: `id`, `name`, `start_time`, `end_time`, `airports[].icao`
+- Match to a VATUSA event when the time windows overlap (with 2h of slack) and the titles are similar (word overlap of at least 50%). On a match, VATSIM's airports are the proposal
+- `organisers[].subdivision` is always null in practice, so it can't be used for matching
+- VATSIM's airport list sometimes contains facility codes (`ZBW`, `ZUL`): US ARTCCs are moved to `artccs`, other `Z??` codes are dropped
+- VATSIM events with no VATUSA match are still listed, as their own proposals
+
+## Proposed config
+
+| Field | Proposal |
+|---|---|
+| `name` | VATUSA `title` (VATSIM `name` if VATSIM-only) |
+| `advertised_start_time` / `advertised_end_time` | VATUSA's, unless its end isn't after its start; then VATSIM's |
+| `airports` | VATSIM airports if matched; otherwise codes extracted from title/body (below) |
+| `artccs` | VATUSA `facility` (unless `ZHQ`) plus `RESP_ARTCC_ID` of each airport, deduplicated |
+
+Airport extraction from text (HTML stripped first), validated against `APT_BASE.csv`:
+
+- 4-letter ICAO codes (`KSEA`) that exist in the airport data and are towered or in the host ARTCC
+- 3-letter FAA codes (`SEA`) only when the airport is in the host ARTCC and towered (`TWR_TYPE_CODE`), to avoid matching words like `FNO`, `ATC` or `THE`
+
+This requires adding `RESP_ARTCC_ID` and `TWR_TYPE_CODE` to `AirportRecord` / `Airport`.
+
+Proposals are a starting point only; anything can be corrected in the UI before approval.
 
 ## Database
 
-Add an `events` table to track discovered events and their processing state:
+See `migrations/20261103000000_create_events_table.sql`. Besides the editable config (which maps onto `EventConfig`), each row keeps the latest raw payload from each API, the latest `proposal`, where its airports came from (`vatsim`, `text`, `manual` or `none`), and when the APIs last listed it.
 
-```sql
-CREATE TABLE events (
-    id          BIGINT PRIMARY KEY,  -- VATSIM event ID
-    name        TEXT NOT NULL,
-    airports    TEXT[] NOT NULL,
-    start_time  TIMESTAMPTZ NOT NULL,
-    end_time    TIMESTAMPTZ NOT NULL,
-    status      TEXT NOT NULL DEFAULT 'pending'
-                -- pending → collating → completed / failed / skipped
-);
+Both source IDs are nullable so an event can come from either API or be added by hand.
+
+### Status lifecycle
+
+```
+proposed ──approve──▶ approved ──(end + buffer passed)──▶ collating ──▶ published
+    │                    │                                    │
+    └──skip──▶ skipped   └──unapprove──▶ proposed             └──▶ failed ──retry──▶ collating
 ```
 
-## Event discovery
+- `proposed`: discovered, not yet reviewed. Never collated
+- `approved`: will collate automatically once `end_time + EVENT_POST_TIME_MINUTES` has passed
+- `published` and `failed` events can be edited and re-collated, which overwrites the R2 object and `events.json` entry
 
-- Poll `https://my.vatsim.net/api/v2/events/view/division/USA` periodically (~30 min)
-- Insert new events into the `events` table (ignore duplicates by ID)
-- Store all events in the database for record-keeping
-- Only trigger collation for events that have at least one airport
+### Re-polling
 
-## ARTCC lookup
-
-- Add `RESP_ARTCC_ID` to `AirportRecord` and carry it through to the `Airport` struct
-- When building `EventConfig` from the API, derive `artccs` by looking up each airport's `RESP_ARTCC_ID` from the CSV and deduplicating
+- Re-polling refreshes `*_source` on every event
+- It only rewrites the editable fields while the event is `proposed` **and** `edited = false`; any manual edit or approval stops further overwrites ("Reset to proposal" undoes this)
+- A VATSIM-only row is merged into its VATUSA event once that appears, if the VATSIM row hasn't been touched
+- If the source times change after approval, the UI shows a "source changed" warning rather than changing the config silently
 
 ## Collation trigger
 
-- After an event's `end_time` + post-buffer has passed, and datafeeds exist for the window, set status to `collating` and run the collation logic
-- Extract the core collation logic from `collator.rs` into a library function callable by both the scheduler and the existing CLI binary:
-  ```rust
-  pub async fn collate_event(
-      pool: &PgPool,
-      airports_db: &HashMap<String, Airport>,
-      event: &EventConfig,
-  ) -> Result<Vec<u8>, anyhow::Error>
-  ```
+A loop (every ~1 min) picks up events where `status = 'approved'` and `end_time + buffer <= NOW()`, sets them to `collating` and runs the collation. As a result:
 
-## Upload + events.json
+- **Approved before the event**: collates automatically after it ends
+- **Approved after the event ends**: picked up on the next tick, so approving is enough to trigger collation
+- **Collate now** button: for re-collating `published`/`failed` events
 
-- Upload the gzipped event data to R2 (same as today)
-- Update `events.json` in R2:
-  1. Download current `events.json` from R2
-  2. Append the new event entry
-  3. Upload the updated `events.json` back to R2
-- Set event status to `completed`
+Raw datafeeds are deleted after 7 days (`fetcher.rs`), so:
 
-## Error handling
+- The UI shows how long until each past event's data expires
+- Collation is refused once `start_time - EVENT_PRE_TIME_MINUTES` is older than the retention window
 
-- If collation or upload fails, set status to `failed` and log the error
-- No automatic retries — failed events stay as `failed` and can be investigated/retried manually
+## Refactor collator
 
-## Manual event editing
+Extract the core of `collator.rs` into `lib.rs`:
 
-Edit pending events directly via SQL against the Postgres instance. The scheduler only processes events with status `pending`, so edits are safe any time before collation starts.
-
-```sql
--- Adjust airports
-UPDATE events SET airports = '{KJFK,KLGA,KEWR}' WHERE id = 12345;
-
--- Adjust times
-UPDATE events SET start_time = '2026-05-20T22:00:00Z', end_time = '2026-05-21T03:00:00Z' WHERE id = 12345;
-
--- Skip an event
-UPDATE events SET status = 'skipped' WHERE id = 12345;
+```rust
+pub async fn collate_event(
+    pool: &PgPool,
+    airports_db: &HashMap<String, Airport>,
+    event: &EventConfig,
+) -> Result<Vec<u8>, anyhow::Error> // gzipped JSON
 ```
 
-The scheduler ignores events with status `skipped`, `completed`, or `failed` — only `pending` events are eligible for collation.
+along with `upload_to_r2`. The `collator` CLI becomes a thin wrapper that reads `config.toml`, calls these, and prints the `events.json` entry as it does today.
 
-## Dockerfile
+## Publishing to `events.json`
 
-Update the existing Dockerfile to build both binaries and include `APT_BASE.csv`:
+The frontend currently loads `events.json` from the GitHub repo (`src/consts.ts`), and it is updated by hand-made commits. For the scheduler to publish:
+
+- Move `events.json` to R2 next to the event files, and point `EVENTS_METADATA_URL` at it (`https://data.vatsim-replay.com/events.json`)
+- On publish: download `events.json`, insert or replace the entry for this event (matched by URL), sort by start time, upload
+- One-time migration: copy the current `public/events.json` to R2 **before** deploying the frontend change. Publishing refuses to run if `events.json` is missing from R2, rather than creating a near-empty one
+
+## Web UI
+
+Served by the scheduler with `axum`, as server-rendered HTML forms (no separate frontend build).
+
+- **List page**: upcoming and recent events grouped by status, with start time, airports and data expiry for past events
+- **Event page**: edit name, times, airports, ARTCCs, custom airport coordinates and unlisted; buttons to approve, unapprove, skip and collate now; shows the raw VATUSA/VATSIM data side by side, plus `error` for failed events
+- **Add event**: create an event by hand for anything neither API lists
+
+Auth: HTTP basic auth checked against `ADMIN_USERNAME` / `ADMIN_PASSWORD`, plus a same-origin check on form posts (browsers resend basic auth credentials to cross-site requests). Compose binds the UI to `127.0.0.1:8080`; expose it over HTTPS (reverse proxy) or a private network.
+
+## Configuration
+
+New environment variables for the scheduler container:
+
+- `VATUSA_API_URL` (default `https://api.vatusa.net/v3`), `VATSIM_EVENTS_URL` (default the USA division feed)
+- `ADMIN_USERNAME` (default `admin`), `ADMIN_PASSWORD` (required)
+- `SCHEDULER_BIND_ADDR` (default `0.0.0.0:8080`)
+- Existing: `DATABASE_URL`, `R2_ENDPOINT_URL`, `R2_BUCKET`, AWS credentials
+
+## Docker
+
+Build both binaries and include `APT_BASE.csv`:
 
 ```dockerfile
 RUN cargo build --release --bin fetcher --bin scheduler
@@ -87,6 +137,10 @@ COPY --from=builder /app/target/release/scheduler /usr/local/bin/scheduler
 COPY APT_BASE.csv /usr/local/bin/APT_BASE.csv
 ```
 
-- Default CMD remains `fetcher` so the existing deployment is unaffected
-- Run the scheduler as a separate container from the same image, overriding the command to `scheduler`
-- The scheduler container needs the same `DATABASE_URL` and network as the fetcher, plus `R2_ENDPOINT_URL`, `R2_BUCKET`, and AWS credentials
+- Default CMD remains `fetcher`, so the existing deployment is unaffected
+- Add a `scheduler` service to `compose.yaml` from the same image with `command: scheduler`, the same `DATABASE_URL`, the R2 variables and an exposed port for the UI
+
+## Not in scope (for now)
+
+- Checking airports against actual traffic after the event
+- Confidence scoring or automatic approval

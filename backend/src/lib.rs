@@ -14,10 +14,21 @@ use std::path::PathBuf;
 use tracing::{debug, instrument, warn};
 use vatsim_utils::models::Pilot;
 
+pub mod collate;
+
 pub const NM_TO_METERS: f64 = 1852.0;
 pub const EVENT_PRE_TIME_MINUTES: u64 = 5;
 pub const EVENT_POST_TIME_MINUTES: u64 = 5;
 pub const CAPTURE_RANGE_NM: u16 = 600;
+/// How long the fetcher keeps raw datafeeds before pruning them.
+pub const DATAFEED_RETENTION_DAYS: i32 = 7;
+/// Public base URL of the R2 bucket that serves event files and `events.json`.
+pub const PUBLIC_DATA_URL: &str = "https://data.vatsim-replay.com";
+/// ARTCCs with boundaries in the frontend's `artccs.json`.
+pub const US_ARTCCS: [&str; 24] = [
+    "ZAB", "ZAN", "ZAU", "ZBW", "ZDC", "ZDV", "ZFW", "ZHN", "ZHU", "ZID", "ZJX", "ZKC", "ZLA",
+    "ZLC", "ZMA", "ZME", "ZMP", "ZNY", "ZOA", "ZOB", "ZSE", "ZSU", "ZTL", "ZUA",
+];
 
 #[derive(Deserialize, Serialize)]
 pub struct PilotData {
@@ -166,14 +177,19 @@ pub struct AirportRecord {
     pub latitude: f64,
     #[serde(rename = "LONG_DECIMAL")]
     pub longitude: f64,
+    #[serde(rename = "RESP_ARTCC_ID")]
+    pub resp_artcc_id: String,
+    #[serde(rename = "TWR_TYPE_CODE")]
+    pub twr_type_code: String,
 }
 
 #[derive(Debug)]
 pub struct Airport {
-    #[allow(dead_code)]
     pub faa_id: Option<String>,
     pub icao_id: String,
     pub point: Point,
+    pub resp_artcc_id: Option<String>,
+    pub towered: bool,
 }
 
 impl From<AirportRecord> for Airport {
@@ -182,6 +198,8 @@ impl From<AirportRecord> for Airport {
             faa_id: Some(record.faa_id),
             icao_id: record.icao_id,
             point: Point::new(record.longitude, record.latitude),
+            resp_artcc_id: Some(record.resp_artcc_id).filter(|id| !id.is_empty()),
+            towered: record.twr_type_code.starts_with("ATCT"),
         }
     }
 }
