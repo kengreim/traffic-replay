@@ -1,8 +1,7 @@
 const MAPBOX_ACCESS_TOKEN =
   "pk.eyJ1Ijoia2VuZ3JlaW0iLCJhIjoiY2x3aDBucGZ5MGI3bjJxc2EyNzNuODAyMyJ9.20EFStYOA8-EvOu4tsCkGg";
 
-const EVENTS_METADATA_URL =
-  "https://raw.githubusercontent.com/kengreim/traffic-replay/refs/heads/master/public/events.json";
+const EVENTS_METADATA_URL = "https://data.vatsim-replay.com/events.json";
 
 const DEFAULT_ZOOM = 7;
 const DEFAULT_VIEWPORT = {
