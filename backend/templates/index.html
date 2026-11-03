@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Events{% endblock %}
+{% block content %}
+{% if let Some(n) = notice %}<div class="banner ok">{{ n }}</div>{% endif %}
+{% if !r2_configured %}<div class="banner warn">R2 isn't configured, so approved events will fail to publish. Set R2_ENDPOINT_URL and R2_BUCKET.</div>{% endif %}
+{% if let Some(e) = poll_error %}<div class="banner err">Last poll failed: {{ e }}</div>{% endif %}
+
+<div class="actions" style="align-items: center">
+  <span class="muted">Last polled: {{ last_poll }}</span>
+  <form class="inline" method="post" action="/poll"><button type="submit">Poll now</button></form>
+</div>
+
+{% for section in sections %}
+{% if section.collapsed %}<details><summary><h2 style="display: inline">{{ section.title }} ({{ section.events.len() }})</h2></summary>{% else %}<h2>{{ section.title }} ({{ section.events.len() }})</h2>{% endif %}
+{% if section.events.is_empty() %}
+  <p class="muted">None.</p>
+{% else %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Event</th><th>When</th><th>Airports</th><th>Source</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for e in section.events %}
+    <tr>
+      <td><a href="/events/{{ e.id }}">{{ e.name }}</a></td>
+      <td>{{ e.window }}</td>
+      <td>{% if e.airports.is_empty() %}<span class="muted">none</span>{% else %}{{ e.airports }}{% endif %}</td>
+      <td>{{ e.sources }}</td>
+      <td><span class="status {{ e.status }}">{{ e.status }}</span>{% if !e.note.is_empty() %}<div class="muted">{{ e.note }}</div>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% if section.collapsed %}</details>{% endif %}
+{% endfor %}
+{% endblock %}

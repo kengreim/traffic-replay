@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<p><a href="/">← All events</a></p>
+<h1>{{ title }} <span class="status {{ status }}">{{ status }}</span></h1>
+
+{% if let Some(n) = notice %}<div class="banner ok">{{ n }}</div>{% endif %}
+{% if let Some(e) = error %}<div class="banner err">{{ e }}</div>{% endif %}
+{% for w in warnings %}<div class="banner warn">{{ w }}</div>{% endfor %}
+
+{% if let Some(id) = id %}
+{% if !actions.is_empty() %}
+<div class="actions">
+  {% for a in actions %}
+  <form class="inline" method="post" action="/events/{{ id }}/{{ a.path }}"{% if let Some(c) = a.confirm %} onsubmit="return confirm(this.dataset.confirm)" data-confirm="{{ c }}"{% endif %}>
+    <button type="submit"{% if a.primary %} class="primary"{% endif %}>{{ a.label }}</button>
+  </form>
+  {% endfor %}
+</div>
+{% endif %}
+{% endif %}
+
+<div class="layout">
+<div>
+<form class="panel" method="post" action="{% if let Some(id) = id %}/events/{{ id }}{% else %}/events{% endif %}">
+  <fieldset{% if !editable %} disabled{% endif %}>
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name" value="{{ form.name }}" required>
+
+    <div class="row">
+      <div>
+        <label for="start_time">Start <span class="hint">(UTC)</span></label>
+        <input type="datetime-local" id="start_time" name="start_time" value="{{ form.start_time }}" required>
+      </div>
+      <div>
+        <label for="end_time">End <span class="hint">(UTC)</span></label>
+        <input type="datetime-local" id="end_time" name="end_time" value="{{ form.end_time }}" required>
+      </div>
+    </div>
+
+    <label for="airports">Airports <span class="hint">ICAO IDs, separated by spaces or commas</span></label>
+    <input type="text" id="airports" name="airports" value="{{ form.airports }}">
+
+    <label for="artccs">ARTCCs</label>
+    <input type="text" id="artccs" name="artccs" value="{{ form.artccs }}">
+
+    <label for="custom_airports">Custom airport coordinates <span class="hint">one per line: ID latitude longitude</span></label>
+    <textarea id="custom_airports" name="custom_airports">{{ form.custom_airports }}</textarea>
+
+    <label><input type="checkbox" name="unlisted"{% if form.unlisted.is_some() %} checked{% endif %}> Unlisted <span class="hint">(published, but hidden from the event list)</span></label>
+
+    <p><button type="submit" class="primary">{% if id.is_some() %}Save changes{% else %}Create event{% endif %}</button></p>
+  </fieldset>
+</form>
+</div>
+
+<div>
+{% if !details.is_empty() %}
+<div class="panel">
+  <dl>
+    {% for (label, value) in details %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
+    {% if let Some(link) = vatsim_link %}<dt>VATSIM page</dt><dd><a href="{{ link }}" target="_blank" rel="noopener">{{ link }}</a></dd>{% endif %}
+  </dl>
+</div>
+{% endif %}
+
+{% if let Some(p) = proposal %}
+<div class="panel">
+  <h2 style="margin-top: 0">Latest proposal</h2>
+  <dl>
+    <dt>Name</dt><dd>{{ p.name }}</dd>
+    <dt>When</dt><dd>{{ p.window }}</dd>
+    <dt>Airports</dt><dd>{% if p.airports.is_empty() %}<span class="muted">none found</span>{% else %}{{ p.airports }}{% endif %} <span class="muted">({{ p.airport_source }})</span></dd>
+    <dt>ARTCCs</dt><dd>{{ p.artccs }}</dd>
+  </dl>
+</div>
+{% endif %}
+
+{% if let Some(body) = vatusa_body %}
+<div class="panel">
+  <h2 style="margin-top: 0">VATUSA description</h2>
+  <pre>{{ body }}</pre>
+</div>
+{% endif %}
+
+{% for (label, json) in sources_json %}
+<details class="panel">
+  <summary>Raw {{ label }} data</summary>
+  <pre>{{ json }}</pre>
+</details>
+{% endfor %}
+</div>
+</div>
+{% endblock %}

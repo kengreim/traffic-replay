@@ -12,11 +12,14 @@ RUN cargo chef cook --release --recipe-path recipe.json
 COPY Cargo.toml Cargo.toml
 COPY src/ src/
 COPY migrations/ migrations/
-RUN cargo build --release --bin fetcher
+COPY templates/ templates/
+RUN cargo build --release --bin fetcher --bin scheduler
 
 FROM debian:trixie-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates libssl3 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/target/release/fetcher /usr/local/bin/fetcher
+COPY --from=builder /app/target/release/scheduler /usr/local/bin/scheduler
+COPY APT_BASE.csv /usr/local/bin/APT_BASE.csv
 CMD ["fetcher"]

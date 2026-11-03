@@ -25,5 +25,24 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
 
+  scheduler:
+    build: .
+    command: scheduler
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}
+      R2_ENDPOINT_URL: ${R2_ENDPOINT_URL:-}
+      R2_BUCKET: ${R2_BUCKET:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+    # Only reachable from the host; put a reverse proxy with HTTPS in front to expose it
+    ports:
+      - "127.0.0.1:8080:8080"
+
 volumes:
   pgdata:
