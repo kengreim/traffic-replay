@@ -3,7 +3,7 @@ const MAPBOX_ACCESS_TOKEN =
 
 const EVENTS_METADATA_URL = "https://data.vatsim-replay.com/events.json";
 
-const DEFAULT_ZOOM = 7;
+const DEFAULT_ZOOM = 6;
 const DEFAULT_VIEWPORT = {
   longitude: -98.583333,
   latitude: 39.833333,
