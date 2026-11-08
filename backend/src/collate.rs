@@ -6,6 +6,7 @@ use chrono::{DateTime, Utc};
 use flate2::Compression;
 use flate2::write::GzEncoder;
 use futures::TryStreamExt;
+use geojson::FeatureCollection;
 use serde::Serialize;
 use sqlx::PgPool;
 use std::collections::HashMap;
@@ -16,7 +17,7 @@ use vatsim_utils::models::Pilot;
 
 use crate::{
     Airport, CAPTURE_RANGE_NM, EVENT_POST_TIME_MINUTES, EVENT_PRE_TIME_MINUTES, EventConfig,
-    FlightPlan, IcaoId, OptimizedEventCapture, PUBLIC_DATA_URL, PilotStatic, calculate_centroid,
+    FlightPlan, IcaoId, OptimizedCaptureFields, PUBLIC_DATA_URL, PilotStatic, calculate_centroid,
     event_slug, filter_pilots_by_distance_and_field, pilots_to_optimized_feature_collection,
 };
 
@@ -37,6 +38,83 @@ impl<W: Write> Write for CountingWriter<W> {
 
     fn flush(&mut self) -> std::io::Result<()> {
         self.inner.flush()
+    }
+}
+
+/// Writes a capture as JSON incrementally: each frame as it's collated, then
+/// the remaining fields once every frame has been seen.
+///
+/// `frames` comes first in the output rather than in `OptimizedCaptureFields`
+/// order, which JSON readers don't care about.
+struct CaptureWriter<W: Write> {
+    out: CountingWriter<W>,
+    /// Output size once `{"frames":` has been written
+    frames_start: usize,
+    first_key: Option<String>,
+    last_key: Option<String>,
+}
+
+impl<W: Write> CaptureWriter<W> {
+    fn new(inner: W) -> std::io::Result<Self> {
+        let mut out = CountingWriter { inner, bytes: 0 };
+        out.write_all(br#"{"frames":"#)?;
+        let frames_start = out.bytes;
+        out.write_all(b"{")?;
+        Ok(Self {
+            out,
+            frames_start,
+            first_key: None,
+            last_key: None,
+        })
+    }
+
+    /// Append a frame. Frames must arrive in timestamp order; one with the
+    /// same key as the previous frame is skipped.
+    fn write_frame(&mut self, key: String, frame: &FeatureCollection) -> Result<(), anyhow::Error> {
+        if self.last_key.as_ref() == Some(&key) {
+            return Ok(());
+        }
+        if self.last_key.is_some() {
+            self.out.write_all(b",")?;
+        }
+        serde_json::to_writer(&mut self.out, &key)?;
+        self.out.write_all(b":")?;
+        serde_json::to_writer(&mut self.out, frame)?;
+        if self.first_key.is_none() {
+            self.first_key = Some(key.clone());
+        }
+        self.last_key = Some(key);
+        Ok(())
+    }
+
+    const fn is_empty(&self) -> bool {
+        self.first_key.is_none()
+    }
+
+    /// Close the frames and write the remaining fields. Returns the inner
+    /// writer and the total bytes written.
+    fn finish(
+        mut self,
+        config: &EventConfig,
+        pilots: HashMap<String, PilotStatic>,
+        flight_plans: HashMap<String, FlightPlan>,
+        viewport_center: geo::Point<f64>,
+    ) -> Result<(W, usize), anyhow::Error> {
+        self.out.write_all(b"}")?;
+        let fields = OptimizedCaptureFields {
+            config: config.clone(),
+            first_timestamp_key: self.first_key,
+            last_timestamp_key: self.last_key,
+            pilots,
+            flight_plans,
+            captures_length_bytes: self.out.bytes - self.frames_start,
+            viewport_center,
+        };
+        // Splice the fields' object into this one, replacing its opening brace
+        let fields = serde_json::to_vec(&fields)?;
+        self.out.write_all(b",")?;
+        self.out.write_all(&fields[1..])?;
+        Ok((self.out.inner, self.out.bytes))
     }
 }
 
@@ -182,9 +260,7 @@ pub async fn collate_range(
     // Shared lookups for optimized format
     let mut pilots_static: HashMap<String, PilotStatic> = HashMap::new();
     let mut flight_plans: HashMap<String, FlightPlan> = HashMap::new();
-    let mut all_frames = HashMap::new();
-    let mut min_key: Option<String> = None;
-    let mut max_key: Option<String> = None;
+    let mut writer = CaptureWriter::new(GzEncoder::new(Vec::new(), Compression::default()))?;
     let mut row_count: usize = 0;
 
     while let Some((update_timestamp, pilots_json)) = stream
@@ -213,26 +289,12 @@ pub async fn collate_range(
             &mut flight_plans,
         );
 
+        // Rows arrive in timestamp order, so frames can be written as they come
         let key = update_timestamp.format("%Y%m%d%H%M%S").to_string();
-
-        if min_key
-            .as_ref()
-            .is_none_or(|min| key.as_str() < min.as_str())
-        {
-            min_key = Some(key.clone());
-        }
-
-        if max_key
-            .as_ref()
-            .is_none_or(|max| key.as_str() > max.as_str())
-        {
-            max_key = Some(key.clone());
-        }
-
-        all_frames.insert(key, collection);
+        writer.write_frame(key, &collection)?;
     }
 
-    if row_count == 0 {
+    if writer.is_empty() {
         bail!("no datafeeds found between {query_start} and {query_end}");
     }
 
@@ -244,33 +306,8 @@ pub async fn collate_range(
     );
 
     let centroid = calculate_centroid(&airports);
-    let mut counter = CountingWriter {
-        inner: std::io::sink(),
-        bytes: 0,
-    };
-    serde_json::to_writer(&mut counter, &all_frames)?;
-    let frames_len = counter.bytes;
-
-    let capture = OptimizedEventCapture {
-        config: event.clone(),
-        first_timestamp_key: min_key,
-        last_timestamp_key: max_key,
-        pilots: pilots_static,
-        flight_plans,
-        frames: all_frames,
-        captures_length_bytes: frames_len,
-        viewport_center: centroid,
-    };
-
-    // Serialize straight into the encoder rather than buffering the whole JSON
-    let mut writer = CountingWriter {
-        inner: GzEncoder::new(Vec::new(), Compression::default()),
-        bytes: 0,
-    };
-    serde_json::to_writer(&mut writer, &capture)?;
-    drop(capture);
-    let uncompressed = writer.bytes;
-    let gzipped = writer.inner.finish()?;
+    let (encoder, uncompressed) = writer.finish(event, pilots_static, flight_plans, centroid)?;
+    let gzipped = encoder.finish()?;
 
     info!(
         uncompressed,
@@ -482,6 +519,59 @@ mod tests {
             advertised_end_time: start + chrono::Duration::hours(hours),
             ..entry("Long Event", start_hour, "x").event
         }
+    }
+
+    #[test]
+    fn capture_writer_streams_frames_then_fields() {
+        let frame = |n: usize| geojson::FeatureCollection {
+            bbox: None,
+            features: (0..n)
+                .map(|i| geojson::Feature {
+                    bbox: None,
+                    geometry: Some(geojson::Geometry::new(geojson::Value::Point(vec![
+                        -122.0 - i as f64 * 0.5,
+                        37.6,
+                    ]))),
+                    id: None,
+                    properties: Some(
+                        json!({"data": {"cid": i, "altitude": 3500}}).as_object().unwrap().clone(),
+                    ),
+                    foreign_members: None,
+                })
+                .collect(),
+            foreign_members: None,
+        };
+
+        let mut writer = CaptureWriter::new(Vec::new()).unwrap();
+        assert!(writer.is_empty());
+        writer.write_frame("20261107000000".to_owned(), &frame(2)).unwrap();
+        // Same second again (e.g. the boundary row between two queries) is skipped
+        writer.write_frame("20261107000000".to_owned(), &frame(5)).unwrap();
+        writer.write_frame("20261107000015".to_owned(), &frame(1)).unwrap();
+        let pilots = HashMap::from([(
+            "1".to_owned(),
+            PilotStatic { name: "A Pilot".to_owned(), callsign: "TEST1".to_owned() },
+        )]);
+        let event = event_hours(0, 1);
+        let (bytes, len) = writer
+            .finish(&event, pilots, HashMap::new(), geo::Point::new(-122.0, 37.6))
+            .unwrap();
+        assert_eq!(len, bytes.len());
+
+        let capture: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let frames = capture["frames"].as_object().unwrap();
+        assert_eq!(frames.len(), 2);
+        assert_eq!(frames["20261107000000"]["features"].as_array().unwrap().len(), 2);
+        assert_eq!(capture["first_timestamp_key"], "20261107000000");
+        assert_eq!(capture["last_timestamp_key"], "20261107000015");
+        assert_eq!(capture["pilots"]["1"]["callsign"], "TEST1");
+        assert!(capture["flightPlans"].as_object().unwrap().is_empty());
+        assert_eq!(capture["config"]["name"], "Long Event");
+        assert_eq!(capture["viewport_center"]["x"], -122.0);
+        assert_eq!(
+            capture["captures_length_bytes"].as_u64().unwrap() as usize,
+            serde_json::to_string(&capture["frames"]).unwrap().len()
+        );
     }
 
     #[test]

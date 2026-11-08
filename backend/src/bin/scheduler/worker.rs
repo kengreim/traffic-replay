@@ -135,6 +135,7 @@ async fn collate_and_publish(state: &AppState, row: &EventRow) -> Result<String,
                 .await
                 .with_context(|| format!("part {} of {}", i + 1, plans.len()))?;
         upload_to_r2(&client, r2, &plan.slug, gzipped).await?;
+        log_memory(row.id, i + 1);
         parts.push(EventsJsonPart {
             start: plan.start,
             end: plan.end,
@@ -154,4 +155,27 @@ async fn collate_and_publish(state: &AppState, row: &EventRow) -> Result<String,
     };
     publish_events_json_entry(&client, r2, &entry, row.published_url.as_deref()).await?;
     Ok(entry.url)
+}
+
+/// Log the process's current and peak memory, to spot growth across parts.
+fn log_memory(id: i64, part: usize) {
+    let Ok(status) = std::fs::read_to_string("/proc/self/status") else {
+        return;
+    };
+    // Lines look like "VmRSS:     123456 kB"
+    let field_mb = |name: &str| {
+        status
+            .lines()
+            .find_map(|line| line.strip_prefix(name))
+            .and_then(|rest| rest.trim().strip_suffix("kB"))
+            .and_then(|kb| kb.trim().parse::<u64>().ok())
+            .map(|kb| kb / 1024)
+    };
+    info!(
+        id,
+        part,
+        rss_mb = field_mb("VmRSS:"),
+        peak_rss_mb = field_mb("VmHWM:"),
+        "Memory after part"
+    );
 }

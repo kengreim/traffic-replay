@@ -148,9 +148,14 @@ pub struct EventCapture {
     pub viewport_center: Point<f64>,
 }
 
-/// Optimized event capture format with deduplicated flight plans and static pilot data
+/// Optimized event capture format with deduplicated flight plans and static pilot data,
+/// apart from its `frames`.
+///
+/// The frames (`GeoJSON` `FeatureCollection`s per timestamp, with flight plan
+/// references) are streamed into the output as they're collated, so they're
+/// never all held in memory; see `collate::CaptureWriter`.
 #[derive(Serialize, Debug)]
-pub struct OptimizedEventCapture {
+pub struct OptimizedCaptureFields {
     pub config: EventConfig,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub first_timestamp_key: Option<String>,
@@ -161,8 +166,7 @@ pub struct OptimizedEventCapture {
     /// Deduplicated flight plans keyed by "{callsign}_{cid}_{revision_id}"
     #[serde(rename = "flightPlans")]
     pub flight_plans: HashMap<String, FlightPlan>,
-    /// GeoJSON FeatureCollections per timestamp with flight plan references
-    pub frames: HashMap<String, FeatureCollection>,
+    /// Size of the serialized `frames` object
     pub captures_length_bytes: usize,
     pub viewport_center: Point<f64>,
 }
