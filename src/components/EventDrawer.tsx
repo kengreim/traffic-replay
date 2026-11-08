@@ -3,14 +3,10 @@ import { X, ChevronUp, ChevronDown } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useStore } from "../store";
 import type { EventConfig } from "../types/vatsim-capture";
+import { getSlugFromEventUrl } from "../utils/events";
 
 type SortField = "name" | "artccs" | "airports" | "start" | "end";
 type SortDirection = "asc" | "desc";
-
-function getSlugFromEventUrl(eventUrl: string): string {
-  const filename = eventUrl.split("/").pop() ?? "";
-  return filename.replace(/\.json$/, "");
-}
 
 function formatDateTime(iso: string): string {
   const d = new Date(iso);
@@ -144,7 +140,16 @@ export function EventDrawer() {
                     setEventDrawerOpen(false);
                   }}
                 >
-                  <td className={tdClass}>{item.event.name}</td>
+                  <td className={tdClass}>
+                    {item.event.name}
+                    {item.parts && item.parts.length > 1 && (
+                      <span
+                        className="ml-2 rounded bg-slate-700 px-1.5 py-0.5 text-xs text-slate-300"
+                      >
+                        {item.parts.length} parts
+                      </span>
+                    )}
+                  </td>
                   <td className={tdClass}>{item.event.artccs.join(", ")}</td>
                   <td className={tdClass}>{item.event.airports.join(", ")}</td>
                   <td className={tdClass}>{formatDateTime(item.event.advertised_start_time)}</td>
