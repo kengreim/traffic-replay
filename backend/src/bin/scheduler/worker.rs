@@ -9,7 +9,8 @@ use tokio::time::sleep;
 use tracing::{error, info, warn};
 use traffic_replay::DATAFEED_RETENTION_DAYS;
 use traffic_replay::collate::{
-    EventsJsonEntry, collate_event, event_url, publish_events_json_entry, upload_to_r2,
+    EventsJsonEntry, EventsJsonPart, collate_range, event_url, publish_events_json_entry,
+    upload_to_r2,
 };
 
 use crate::db::{self, EventRow};
@@ -66,8 +67,14 @@ async fn poll_once(
 
 pub async fn collation_loop(state: Arc<AppState>) {
     match db::requeue_interrupted(&state.pool).await {
-        Ok(0) => {}
-        Ok(n) => warn!(events = n, "Requeued events interrupted mid-collation"),
+        Ok(interrupted) => {
+            if interrupted.requeued > 0 {
+                warn!(events = interrupted.requeued, "Requeued events interrupted mid-collation");
+            }
+            if interrupted.failed > 0 {
+                warn!(events = interrupted.failed, "Failed events interrupted too many times");
+            }
+        }
         Err(e) => error!(error = ?e, "Failed to requeue interrupted events"),
     }
 
@@ -116,14 +123,33 @@ async fn collate_and_publish(state: &AppState, row: &EventRow) -> Result<String,
         .context("R2 is not configured (set R2_ENDPOINT_URL and R2_BUCKET)")?;
 
     let config = row.config();
-    let collated = collate_event(&state.pool, &state.airports, &config).await?;
-
+    let plans = row.parts();
     let client = r2.client().await;
-    upload_to_r2(&client, r2, &collated.slug, collated.gzipped).await?;
 
+    // One part at a time, so only one capture is held in memory
+    let mut parts = vec![];
+    for (i, plan) in plans.iter().enumerate() {
+        info!(id = row.id, part = i + 1, of = plans.len(), slug = %plan.slug, "Collating part");
+        let gzipped =
+            collate_range(&state.pool, &state.airports, &config, plan.query_start, plan.query_end)
+                .await
+                .with_context(|| format!("part {} of {}", i + 1, plans.len()))?;
+        upload_to_r2(&client, r2, &plan.slug, gzipped).await?;
+        parts.push(EventsJsonPart {
+            start: plan.start,
+            end: plan.end,
+            url: event_url(&plan.slug),
+        });
+    }
+
+    let url = parts.first().context("event has no parts")?.url.clone();
+    if parts.len() == 1 {
+        parts.clear();
+    }
     let entry = EventsJsonEntry {
         event: config,
-        url: event_url(&collated.slug),
+        url,
+        parts,
         unlisted: row.unlisted,
     };
     publish_events_json_entry(&client, r2, &entry, row.published_url.as_deref()).await?;

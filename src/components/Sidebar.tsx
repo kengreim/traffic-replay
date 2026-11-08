@@ -3,6 +3,7 @@ import { StyledCheckbox } from "./ui-core/Checkbox.tsx";
 import { Github, PanelLeftClose, PanelLeftOpen, PlusIcon, X } from "lucide-react";
 import { useStore } from "../store";
 import type { FormEvent } from "react";
+import { findEventByUrl } from "../utils/events";
 
 interface Route {
   arrival: string;
@@ -47,7 +48,7 @@ export function Sidebar() {
 
   const currentEvent = useMemo(() => {
     if (!currentEventUrl) return null;
-    return eventsMetadata.find((e) => e.url === currentEventUrl)?.event ?? null;
+    return findEventByUrl(eventsMetadata, currentEventUrl)?.event ?? null;
   }, [currentEventUrl, eventsMetadata]);
 
   const handleAddRouteFilter = (e: FormEvent) => {

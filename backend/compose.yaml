@@ -29,6 +29,9 @@ services:
     build: .
     command: scheduler
     restart: unless-stopped
+    # Collation holds a whole capture (or part) in memory; cap it so a large
+    # event can only take down this container, not the host
+    mem_limit: 1536m
     depends_on:
       db:
         condition: service_healthy

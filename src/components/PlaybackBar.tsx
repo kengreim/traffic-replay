@@ -1,7 +1,9 @@
 import { Pause, Play, StepBack, StepForward } from "lucide-react";
 import { Slider } from "radix-ui";
+import { useNavigate } from "@tanstack/react-router";
 import { useStore } from "../store";
 import { useEffect, useMemo, useRef, useCallback } from "react";
+import { findEventByUrl, formatPartWindow, getSlugFromEventUrl } from "../utils/events";
 
 export function PlaybackBar() {
   const {
@@ -13,7 +15,15 @@ export function PlaybackBar() {
     togglePlayback,
     playbackSpeed,
     setPlaybackSpeed,
+    eventsMetadata,
+    currentEventUrl,
   } = useStore();
+  const navigate = useNavigate();
+
+  const parts = useMemo(
+    () => findEventByUrl(eventsMetadata, currentEventUrl)?.parts ?? [],
+    [eventsMetadata, currentEventUrl],
+  );
 
   const playIntervalRef = useRef<number | null>(null);
   const pointerDownSuspendedPlay = useRef(false);
@@ -113,6 +123,28 @@ export function PlaybackBar() {
                 <option value={16}>16x</option>
               </select>
             </div>
+            {parts.length > 1 && (
+              <div className="mt-2">
+                <select
+                  id="event-part"
+                  aria-label="Event part"
+                  value={currentEventUrl}
+                  onChange={(e) =>
+                    navigate({
+                      to: "/$slug",
+                      params: { slug: getSlugFromEventUrl(e.target.value) },
+                    })
+                  }
+                  className="rounded border border-gray-300 px-2 py-1 text-sm"
+                >
+                  {parts.map((part, i) => (
+                    <option key={part.url} value={part.url}>
+                      Part {i + 1} of {parts.length} · {formatPartWindow(part)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <div className="mb-5 ml-6 grow">
             <form className="px-4">

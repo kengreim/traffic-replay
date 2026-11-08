@@ -82,6 +82,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let events_json_entry = EventsJsonEntry {
         event: event_config,
         url: event_url(&slug),
+        parts: vec![],
         unlisted: false,
     };
 

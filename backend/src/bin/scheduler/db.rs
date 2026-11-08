@@ -4,10 +4,14 @@ use chrono::{DateTime, Utc};
 use sqlx::types::Json;
 use sqlx::{FromRow, PgPool, Postgres, Transaction};
 use std::collections::HashMap;
-use traffic_replay::collate::collation_window;
+use traffic_replay::collate::{PartPlan, collation_window, plan_parts};
 use traffic_replay::{CustomAirport, DATAFEED_RETENTION_DAYS, EVENT_POST_TIME_MINUTES, EventConfig};
 
 use crate::discovery::{DiscoveredEvent, Proposal};
+
+/// Collation attempts before an interrupted event is marked failed instead of
+/// being requeued on startup.
+const MAX_COLLATION_ATTEMPTS: i32 = 2;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Status {
@@ -60,12 +64,17 @@ pub struct EventRow {
     pub airport_source: String,
     pub unlisted: bool,
     pub edited: bool,
+    pub part_hours: Option<i32>,
     status: String,
     pub error: Option<String>,
     pub published_url: Option<String>,
     pub approved_at: Option<DateTime<Utc>>,
     pub collated_at: Option<DateTime<Utc>>,
     pub last_seen_at: Option<DateTime<Utc>>,
+}
+
+fn part_hours_to_u32(part_hours: Option<i32>) -> Option<u32> {
+    part_hours.and_then(|h| u32::try_from(h).ok())
 }
 
 impl EventRow {
@@ -86,6 +95,10 @@ impl EventRow {
             advertised_start_time: self.start_time,
             advertised_end_time: self.end_time,
         }
+    }
+
+    pub fn parts(&self) -> Vec<PartPlan> {
+        plan_parts(&self.config(), part_hours_to_u32(self.part_hours))
     }
 
     /// When collation becomes due: the end of the event plus the post buffer.
@@ -280,14 +293,15 @@ pub struct EventEdit {
     pub artccs: Vec<String>,
     pub custom_airports: HashMap<String, CustomAirport>,
     pub unlisted: bool,
+    pub part_hours: Option<i32>,
 }
 
 pub async fn create_event(pool: &PgPool, edit: &EventEdit) -> Result<i64, sqlx::Error> {
     sqlx::query_scalar(
         "INSERT INTO events
             (name, start_time, end_time, airports, artccs, custom_airports, unlisted,
-             airport_source, edited)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 'manual', TRUE)
+             part_hours, airport_source, edited)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'manual', TRUE)
          RETURNING id",
     )
     .bind(&edit.name)
@@ -297,6 +311,7 @@ pub async fn create_event(pool: &PgPool, edit: &EventEdit) -> Result<i64, sqlx::
     .bind(&edit.artccs)
     .bind(Json(&edit.custom_airports))
     .bind(edit.unlisted)
+    .bind(edit.part_hours)
     .fetch_one(pool)
     .await
 }
@@ -305,7 +320,7 @@ pub async fn create_event(pool: &PgPool, edit: &EventEdit) -> Result<i64, sqlx::
 pub async fn update_event(pool: &PgPool, id: i64, edit: &EventEdit) -> Result<bool, sqlx::Error> {
     let result = sqlx::query(
         "UPDATE events SET name = $2, start_time = $3, end_time = $4, artccs = $6,
-            custom_airports = $7, unlisted = $8, edited = TRUE, updated_at = NOW(),
+            custom_airports = $7, unlisted = $8, part_hours = $9, edited = TRUE, updated_at = NOW(),
             airport_source = CASE WHEN airports = $5 THEN airport_source ELSE 'manual' END,
             airports = $5
          WHERE id = $1 AND status <> 'collating'",
@@ -318,6 +333,7 @@ pub async fn update_event(pool: &PgPool, id: i64, edit: &EventEdit) -> Result<bo
     .bind(&edit.artccs)
     .bind(Json(&edit.custom_airports))
     .bind(edit.unlisted)
+    .bind(edit.part_hours)
     .execute(pool)
     .await?;
     Ok(result.rows_affected() > 0)
@@ -348,7 +364,7 @@ pub async fn reset_to_proposal(pool: &PgPool, row: &EventRow) -> Result<bool, sq
 /// already changed.
 ///
 /// Approving counts as reviewing the config, so later polls stop overwriting it
-/// even if the event is unapproved again.
+/// even if the event is unapproved again. It also resets the collation attempts.
 pub async fn transition(
     pool: &PgPool,
     id: i64,
@@ -359,6 +375,7 @@ pub async fn transition(
     let result = sqlx::query(
         "UPDATE events SET status = $3, updated_at = NOW(),
             approved_at = CASE WHEN $3 = 'approved' THEN NOW() ELSE approved_at END,
+            attempts = CASE WHEN $3 = 'approved' THEN 0 ELSE attempts END,
             edited = edited OR $3 = 'approved'
          WHERE id = $1 AND status = ANY($2)",
     )
@@ -373,7 +390,8 @@ pub async fn transition(
 /// Claim the next approved event that has ended, marking it as collating.
 pub async fn claim_next_due(pool: &PgPool) -> Result<Option<EventRow>, sqlx::Error> {
     sqlx::query_as(
-        "UPDATE events SET status = 'collating', error = NULL, updated_at = NOW()
+        "UPDATE events SET status = 'collating', error = NULL, attempts = attempts + 1,
+            updated_at = NOW()
          WHERE id = (
             SELECT id FROM events
             WHERE status = 'approved' AND end_time + make_interval(mins => $1) <= NOW()
@@ -410,10 +428,30 @@ pub async fn mark_failed(pool: &PgPool, id: i64, error: &str) -> Result<(), sqlx
     Ok(())
 }
 
-/// Requeue events left mid-collation by a restart.
-pub async fn requeue_interrupted(pool: &PgPool) -> Result<u64, sqlx::Error> {
-    let result = sqlx::query("UPDATE events SET status = 'approved' WHERE status = 'collating'")
-        .execute(pool)
-        .await?;
-    Ok(result.rows_affected())
+/// Events left mid-collation by a restart, by what happened to them.
+pub struct Interrupted {
+    pub requeued: u64,
+    pub failed: u64,
+}
+
+/// Requeue events left mid-collation by a restart, or fail them once they've
+/// used up their attempts.
+pub async fn requeue_interrupted(pool: &PgPool) -> Result<Interrupted, sqlx::Error> {
+    let statuses: Vec<String> = sqlx::query_scalar(
+        "UPDATE events SET updated_at = NOW(),
+            status = CASE WHEN attempts >= $1 THEN 'failed' ELSE 'approved' END,
+            error = CASE WHEN attempts >= $1
+                THEN 'Collation was interrupted ' || attempts || ' times, possibly by running out of memory. Retry to collate it again.'
+                ELSE error END
+         WHERE status = 'collating'
+         RETURNING status",
+    )
+    .bind(MAX_COLLATION_ATTEMPTS)
+    .fetch_all(pool)
+    .await?;
+    let failed = statuses.iter().filter(|s| *s == "failed").count() as u64;
+    Ok(Interrupted {
+        requeued: statuses.len() as u64 - failed,
+        failed,
+    })
 }

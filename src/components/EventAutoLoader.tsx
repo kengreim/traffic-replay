@@ -9,11 +9,7 @@ import type {
 } from "../types/vatsim-capture";
 import { isOptimizedFormat } from "../types/vatsim-capture";
 import type { Feature, FeatureCollection, Point } from "geojson";
-
-function getSlugFromEventUrl(eventUrl: string): string {
-  const filename = eventUrl.split("/").pop() ?? "";
-  return filename.replace(/\.json$/, "");
-}
+import { findEventBySlug, findEventByUrl } from "../utils/events";
 
 /**
  * Normalize optimized format to legacy format for internal use.
@@ -76,8 +72,13 @@ export function EventAutoLoader() {
   useEffect(() => {
     if (!slug || eventsMetadata.length === 0) return;
 
-    const matched = eventsMetadata.find((e) => getSlugFromEventUrl(e.url) === slug);
+    const matched = findEventBySlug(eventsMetadata, slug);
     if (!matched) return;
+
+    // Keep route filters when switching between parts of the same event
+    const previousUrl = useStore.getState().currentEventUrl;
+    const isSameEvent =
+      previousUrl !== "" && findEventByUrl(eventsMetadata, previousUrl) === matched.entry;
 
     const fetchEvent = async () => {
       setEventLoading(true);
@@ -100,7 +101,7 @@ export function EventAutoLoader() {
           setTimestamps(ts);
           setSliderIndex(0);
           stopPlayback();
-          clearRouteFilters();
+          if (!isSameEvent) clearRouteFilters();
         }
       } catch (error) {
         console.error("Failed to fetch event data:", error);

@@ -62,7 +62,22 @@ interface PilotDynamic {
   last_updated: string;
 }
 
-type EventsMetadata = { event: EventConfig; url: string; unlisted?: boolean }[];
+// One file of an event split into fixed-length parts
+interface EventPart {
+  start: string;
+  end: string;
+  url: string;
+}
+
+interface EventsMetadataEntry {
+  event: EventConfig;
+  // The capture, or its first part when split
+  url: string;
+  parts?: EventPart[];
+  unlisted?: boolean;
+}
+
+type EventsMetadata = EventsMetadataEntry[];
 
 interface TrafficData {
   [key: string]: FeatureCollection;
@@ -98,6 +113,8 @@ export type {
   OptimizedEventCapture,
   EventConfig,
   EventsMetadata,
+  EventsMetadataEntry,
+  EventPart,
   TrafficData,
   PilotProperties,
   PilotData,
