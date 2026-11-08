@@ -22,19 +22,21 @@ use crate::{
 
 const EVENTS_JSON_KEY: &str = "events.json";
 
-#[derive(Default)]
-struct CountingWriter {
+/// Counts the bytes written through it, passing them on to `inner`.
+struct CountingWriter<W> {
+    inner: W,
     bytes: usize,
 }
 
-impl Write for CountingWriter {
+impl<W: Write> Write for CountingWriter<W> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.bytes += buf.len();
-        Ok(buf.len())
+        let written = self.inner.write(buf)?;
+        self.bytes += written;
+        Ok(written)
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        Ok(())
+        self.inner.flush()
     }
 }
 
@@ -52,12 +54,83 @@ pub fn collation_window(event: &EventConfig) -> (DateTime<Utc>, DateTime<Utc>) {
     )
 }
 
+/// One file of an event's capture. Long events can be split into several parts,
+/// each covering a fixed stretch of the event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PartPlan {
+    pub slug: String,
+    /// The part of the advertised event this covers
+    pub start: DateTime<Utc>,
+    pub end: DateTime<Utc>,
+    /// Datafeeds to collate; the first and last parts include the pre/post buffers
+    pub query_start: DateTime<Utc>,
+    pub query_end: DateTime<Utc>,
+}
+
+/// Split an event into consecutive parts of `part_hours`.
+///
+/// Parts are counted from the advertised start, and the last may be shorter.
+/// Without `part_hours`, or if it covers the whole event, there is a single
+/// part under the event's slug.
+#[must_use]
+pub fn plan_parts(event: &EventConfig, part_hours: Option<u32>) -> Vec<PartPlan> {
+    let (start, end) = (event.advertised_start_time, event.advertised_end_time);
+    let mut bounds = vec![];
+    if let Some(hours) = part_hours.filter(|h| *h > 0) {
+        let step = chrono::Duration::hours(hours.into());
+        let mut part_start = start;
+        while part_start < end {
+            let part_end = (part_start + step).min(end);
+            bounds.push((part_start, part_end));
+            part_start = part_end;
+        }
+    }
+    if bounds.len() <= 1 {
+        bounds = vec![(start, end)];
+    }
+
+    let (query_start, query_end) = collation_window(event);
+    let slug = event_slug(event);
+    let count = bounds.len();
+    bounds
+        .into_iter()
+        .enumerate()
+        .map(|(i, (part_start, part_end))| PartPlan {
+            slug: if count == 1 {
+                slug.clone()
+            } else {
+                format!("{slug}-part-{}", i + 1)
+            },
+            start: part_start,
+            end: part_end,
+            query_start: if i == 0 { query_start } else { part_start },
+            query_end: if i == count - 1 { query_end } else { part_end },
+        })
+        .collect()
+}
+
 /// Build the gzipped capture for an event from the datafeeds in the database.
 pub async fn collate_event(
     pool: &PgPool,
     airports_db: &HashMap<IcaoId, Airport>,
     event: &EventConfig,
 ) -> Result<CollatedEvent, anyhow::Error> {
+    let (query_start, query_end) = collation_window(event);
+    Ok(CollatedEvent {
+        slug: event_slug(event),
+        gzipped: collate_range(pool, airports_db, event, query_start, query_end).await?,
+    })
+}
+
+/// Build the gzipped capture of an event's datafeeds between `query_start` and
+/// `query_end`.
+pub async fn collate_range(
+    pool: &PgPool,
+    airports_db: &HashMap<IcaoId, Airport>,
+    event: &EventConfig,
+    query_start: DateTime<Utc>,
+    query_end: DateTime<Utc>,
+) -> Result<Vec<u8>, anyhow::Error> {
     if event.advertised_end_time <= event.advertised_start_time {
         bail!("advertised end time cannot be before advertised start time");
     }
@@ -92,8 +165,6 @@ pub async fn collate_event(
             (icao_id.clone(), airport)
         })
         .collect::<Vec<_>>();
-
-    let (query_start, query_end) = collation_window(event);
 
     info!(
         start = %query_start,
@@ -173,7 +244,10 @@ pub async fn collate_event(
     );
 
     let centroid = calculate_centroid(&airports);
-    let mut counter = CountingWriter::default();
+    let mut counter = CountingWriter {
+        inner: std::io::sink(),
+        bytes: 0,
+    };
     serde_json::to_writer(&mut counter, &all_frames)?;
     let frames_len = counter.bytes;
 
@@ -188,24 +262,24 @@ pub async fn collate_event(
         viewport_center: centroid,
     };
 
-    let json_bytes = serde_json::to_vec(&capture)?;
-
-    // Gzip compress the JSON
-    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
-    encoder.write_all(&json_bytes)?;
-    let gzipped = encoder.finish()?;
+    // Serialize straight into the encoder rather than buffering the whole JSON
+    let mut writer = CountingWriter {
+        inner: GzEncoder::new(Vec::new(), Compression::default()),
+        bytes: 0,
+    };
+    serde_json::to_writer(&mut writer, &capture)?;
+    drop(capture);
+    let uncompressed = writer.bytes;
+    let gzipped = writer.inner.finish()?;
 
     info!(
-        uncompressed = json_bytes.len(),
+        uncompressed,
         compressed = gzipped.len(),
-        ratio = format!("{:.1}x", json_bytes.len() as f64 / gzipped.len() as f64),
+        ratio = format!("{:.1}x", uncompressed as f64 / gzipped.len() as f64),
         "Compression stats"
     );
 
-    Ok(CollatedEvent {
-        slug: event_slug(event),
-        gzipped,
-    })
+    Ok(gzipped)
 }
 
 /// Public URL an event's capture is served from.
@@ -218,9 +292,19 @@ pub fn event_url(slug: &str) -> String {
 #[derive(Serialize, Debug, Clone)]
 pub struct EventsJsonEntry {
     pub event: EventConfig,
+    /// The capture, or its first part when split
     pub url: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub parts: Vec<EventsJsonPart>,
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub unlisted: bool,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct EventsJsonPart {
+    pub start: DateTime<Utc>,
+    pub end: DateTime<Utc>,
+    pub url: String,
 }
 
 pub struct R2Config {
@@ -368,6 +452,7 @@ mod tests {
                 advertised_end_time: Utc.with_ymd_and_hms(2026, 1, 1, start_hour + 1, 0, 0).unwrap(),
             },
             url: url.to_owned(),
+            parts: vec![],
             unlisted: false,
         }
     }
@@ -385,7 +470,51 @@ mod tests {
         assert_eq!(urls, ["early", "new", "late"]);
         // Unknown fields on other entries are preserved
         assert_eq!(merged[0]["extra"], 1);
-        // `unlisted` is only written when set
+        // `unlisted` and `parts` are only written when set
         assert!(merged[1].get("unlisted").is_none());
+        assert!(merged[1].get("parts").is_none());
+    }
+
+    fn event_hours(start_hour: u32, hours: i64) -> EventConfig {
+        let start = Utc.with_ymd_and_hms(2026, 1, 1, start_hour, 0, 0).unwrap();
+        EventConfig {
+            advertised_start_time: start,
+            advertised_end_time: start + chrono::Duration::hours(hours),
+            ..entry("Long Event", start_hour, "x").event
+        }
+    }
+
+    #[test]
+    fn plans_single_part_by_default() {
+        let event = event_hours(0, 6);
+        for part_hours in [None, Some(0), Some(6), Some(8)] {
+            let parts = plan_parts(&event, part_hours);
+            assert_eq!(parts.len(), 1, "{part_hours:?}");
+            assert_eq!(parts[0].slug, event_slug(&event));
+            assert_eq!((parts[0].query_start, parts[0].query_end), collation_window(&event));
+        }
+    }
+
+    #[test]
+    fn plans_fixed_parts_with_shorter_last_part() {
+        let event = event_hours(0, 26);
+        let parts = plan_parts(&event, Some(8));
+        let slug = event_slug(&event);
+        assert_eq!(
+            parts.iter().map(|p| p.slug.as_str()).collect::<Vec<_>>(),
+            [1, 2, 3, 4].map(|n| format!("{slug}-part-{n}"))
+        );
+        let hours = |t: DateTime<Utc>| (t - event.advertised_start_time).num_hours();
+        assert_eq!(
+            parts.iter().map(|p| (hours(p.start), hours(p.end))).collect::<Vec<_>>(),
+            [(0, 8), (8, 16), (16, 24), (24, 26)]
+        );
+
+        // Buffers only on the outer edges; parts meet at their boundaries
+        let (query_start, query_end) = collation_window(&event);
+        assert_eq!(parts[0].query_start, query_start);
+        assert_eq!(parts[0].query_end, parts[1].start);
+        assert_eq!(parts[1].query_start, parts[1].start);
+        assert_eq!(parts[3].query_end, query_end);
     }
 }

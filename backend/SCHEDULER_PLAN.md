@@ -84,6 +84,16 @@ Raw datafeeds are deleted after 7 days (`fetcher.rs`), so:
 - The UI shows how long until each past event's data expires
 - Collation is refused once `start_time - EVENT_PRE_TIME_MINUTES` is older than the retention window
 
+If the scheduler restarts mid-collation, the event is requeued on startup. Each claim increments `attempts` (reset on approval or retry), and after 2 interrupted attempts the event is marked `failed` instead, so an event that keeps exhausting memory isn't retried forever.
+
+### Parts
+
+Long events can be split into fixed-length parts (`part_hours`), counted from the advertised start; the last part may be shorter. Each part is collated, uploaded and freed in turn, so only one part's capture is in memory at a time. The pre/post buffers apply only to the outer edges.
+
+- Files: `<slug>-part-1.json`, `<slug>-part-2.json`, …; an unsplit event keeps `<slug>.json`
+- `events.json`: `url` is part 1, and `parts: [{ start, end, url }]` lists every part (omitted when there is only one)
+- Splitting or unsplitting a published event changes its URLs; the old files stay in R2
+
 ## Refactor collator
 
 Extract the core of `collator.rs` into `lib.rs`:

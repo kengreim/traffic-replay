@@ -49,6 +49,9 @@
     <label for="custom_airports">Custom airport coordinates <span class="hint">one per line: ID latitude longitude</span></label>
     <textarea id="custom_airports" name="custom_airports">{{ form.custom_airports }}</textarea>
 
+    <label for="part_hours">Split into parts of <span class="hint">(hours; leave empty for one replay. Changing this after publishing changes the replay URLs)</span></label>
+    <input type="number" id="part_hours" name="part_hours" value="{{ form.part_hours }}" min="1" max="168" step="1" placeholder="e.g. 6">
+
     <label><input type="checkbox" name="unlisted"{% if form.unlisted.is_some() %} checked{% endif %}> Unlisted <span class="hint">(published, but hidden from the event list)</span></label>
 
     <p><button type="submit" class="primary">{% if id.is_some() %}Save changes{% else %}Create event{% endif %}</button></p>
@@ -70,6 +73,7 @@
 <div class="panel">
   <dl>
     {% for (label, value) in details %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
+    {% if !parts.is_empty() %}<dt>Parts</dt><dd><ol class="parts">{% for p in parts %}<li>{{ p }}</li>{% endfor %}</ol></dd>{% endif %}
     {% if let Some(link) = vatsim_link %}<dt>VATSIM page</dt><dd><a href="{{ link }}" target="_blank" rel="noopener">{{ link }}</a></dd>{% endif %}
   </dl>
 </div>

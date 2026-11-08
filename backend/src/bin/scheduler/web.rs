@@ -23,6 +23,8 @@ use crate::db::{self, EventEdit, EventRow, Status};
 /// How long after a poll an upcoming event can go unseen before it's flagged.
 const NOT_SEEN_WARNING_HOURS: i64 = 2;
 const INPUT_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M";
+/// Longest part an event can be split into: a week, the datafeed retention.
+const MAX_PART_HOURS: i32 = 24 * 7;
 
 pub fn router(state: Arc<AppState>) -> Router {
     Router::new()
@@ -350,6 +352,8 @@ struct EventForm {
     airports: String,
     artccs: String,
     custom_airports: String,
+    #[serde(default)]
+    part_hours: String,
     unlisted: Option<String>,
 }
 
@@ -368,6 +372,7 @@ impl EventForm {
             airports: row.airports.join(" "),
             artccs: row.artccs.join(" "),
             custom_airports,
+            part_hours: row.part_hours.map(|h| h.to_string()).unwrap_or_default(),
             unlisted: row.unlisted.then(|| "on".to_owned()),
         }
     }
@@ -409,6 +414,19 @@ impl EventForm {
             custom_airports.insert(id, coords);
         }
 
+        let part_hours = match self.part_hours.trim() {
+            "" => None,
+            hours => Some(
+                hours
+                    .parse::<i32>()
+                    .ok()
+                    .filter(|h| (1..=MAX_PART_HOURS).contains(h))
+                    .ok_or_else(|| {
+                        format!("Part length must be a whole number of hours from 1 to {MAX_PART_HOURS}.")
+                    })?,
+            ),
+        };
+
         Ok(EventEdit {
             name,
             start_time: parse_input_time(&self.start_time).ok_or("Start time is invalid.")?,
@@ -417,6 +435,7 @@ impl EventForm {
             artccs,
             custom_airports,
             unlisted: self.unlisted.is_some(),
+            part_hours,
         })
     }
 }
@@ -477,6 +496,8 @@ struct EventTemplate {
     poll_state: String,
     actions: Vec<Action>,
     details: Vec<(&'static str, String)>,
+    /// Windows of each part, when the event is split
+    parts: Vec<String>,
     proposal: Option<ProposalView>,
     vatsim_link: Option<String>,
     vatusa_body: Option<String>,
@@ -500,6 +521,7 @@ impl EventTemplate {
             poll_state: String::new(),
             actions: vec![],
             details: vec![],
+            parts: vec![],
             proposal: None,
             vatsim_link: None,
             vatusa_body: None,
@@ -649,6 +671,14 @@ impl EventTemplate {
             poll_state: status.as_str().to_owned(),
             actions,
             details,
+            parts: {
+                let parts = row.parts();
+                if parts.len() > 1 {
+                    parts.iter().map(|p| format_window(p.start, p.end)).collect()
+                } else {
+                    vec![]
+                }
+            },
             proposal: row.proposal.as_ref().map(|p| ProposalView {
                 name: p.0.name.clone(),
                 window: format_window(p.0.start_time, p.0.end_time),
@@ -809,6 +839,7 @@ mod tests {
             airports: "ksea, KPDX KSEA\nGE99".to_owned(),
             artccs: "zse".to_owned(),
             custom_airports: "ge99 34.5 -84.25\n\n".to_owned(),
+            part_hours: " 6 ".to_owned(),
             unlisted: Some("on".to_owned()),
         };
         let edit = form.parse().unwrap();
@@ -818,6 +849,8 @@ mod tests {
         assert_eq!(edit.custom_airports["GE99"].longitude, -84.25);
         assert_eq!((edit.end_time - edit.start_time).num_minutes(), 241);
         assert!(edit.unlisted);
+        assert_eq!(edit.part_hours, Some(6));
+        assert_eq!(EventForm { part_hours: String::new(), ..form }.parse().unwrap().part_hours, None);
     }
 
     #[test]
@@ -832,6 +865,9 @@ mod tests {
         assert!(EventForm { custom_airports: "GE99 95 0".to_owned(), ..base() }.parse().is_err());
         assert!(EventForm { start_time: "tomorrow".to_owned(), ..base() }.parse().is_err());
         assert!(EventForm { name: "  ".to_owned(), ..base() }.parse().is_err());
+        for hours in ["0", "1.5", "-2", "169", "six"] {
+            assert!(EventForm { part_hours: hours.to_owned(), ..base() }.parse().is_err(), "{hours}");
+        }
     }
 
     #[test]
