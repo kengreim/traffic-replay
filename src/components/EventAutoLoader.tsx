@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useParams } from "@tanstack/react-router";
+import { FlyToInterpolator } from "@deck.gl/core";
 import { useStore } from "../store";
 import type {
   EventCapture,
@@ -10,6 +11,7 @@ import type {
 import { isOptimizedFormat } from "../types/vatsim-capture";
 import type { Feature, FeatureCollection, Point } from "geojson";
 import { findEventBySlug, findEventByUrl } from "../utils/events";
+import { DEFAULT_ZOOM } from "../consts";
 
 /**
  * Normalize optimized format to legacy format for internal use.
@@ -68,6 +70,7 @@ export function EventAutoLoader() {
   const setSliderIndex = useStore((s) => s.setSliderIndex);
   const stopPlayback = useStore((s) => s.stopPlayback);
   const clearRouteFilters = useStore((s) => s.clearRouteFilters);
+  const setViewport = useStore((s) => s.setViewport);
 
   useEffect(() => {
     if (!slug || eventsMetadata.length === 0) return;
@@ -75,7 +78,6 @@ export function EventAutoLoader() {
     const matched = findEventBySlug(eventsMetadata, slug);
     if (!matched) return;
 
-    // Keep route filters when switching between parts of the same event
     const previousUrl = useStore.getState().currentEventUrl;
     const isSameEvent =
       previousUrl !== "" && findEventByUrl(eventsMetadata, previousUrl) === matched.entry;
@@ -101,7 +103,19 @@ export function EventAutoLoader() {
           setTimestamps(ts);
           setSliderIndex(0);
           stopPlayback();
-          if (!isSameEvent) clearRouteFilters();
+          // Switching parts keeps the current view and route filters
+          if (!isSameEvent) {
+            clearRouteFilters();
+            setViewport({
+              longitude: event.viewport_center.x,
+              latitude: event.viewport_center.y,
+              pitch: 0,
+              bearing: 0,
+              zoom: DEFAULT_ZOOM,
+              transitionInterpolator: new FlyToInterpolator({ speed: 2 }),
+              transitionDuration: "auto",
+            });
+          }
         }
       } catch (error) {
         console.error("Failed to fetch event data:", error);
